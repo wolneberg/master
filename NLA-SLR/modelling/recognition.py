@@ -1,10 +1,10 @@
 import torch
-from VKNet.S3D import S3D_backbone
-from VKNet.two_stream import S3D_two_stream_v2
-from VKNet.four_stream import S3D_four_stream
+from modelling.S3D import S3D_backbone
+from modelling.two_stream import S3D_two_stream_v2
+from modelling.four_stream import S3D_four_stream
 from utils.misc import get_logger, neq_load_customized
 import random, torchvision
-from VKNet.Visualhead import SepConvVisualHead
+from modelling.Visualhead import SepConvVisualHead
 import numpy as np
 from copy import deepcopy
 from utils.gen_gaussian import gen_gaussian_hmap_op

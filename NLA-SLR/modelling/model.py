@@ -1,4 +1,4 @@
-from VKNet.recognition import RecognitionNetwork
+from modelling.recognition import RecognitionNetwork
 from utils.misc import get_logger
 import torch
 

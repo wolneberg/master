@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from VKNet.fusion import Lateral_Conn
-from VKNet.S3D import S3D_backbone
+from modelling.fusion import Lateral_Conn
+from modelling.S3D import S3D_backbone
 
 
 class S3D_two_stream_v2(nn.Module):

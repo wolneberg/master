@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from VKNet.two_stream import S3D_two_stream_v2
-from VKNet.fusion import Lateral_Conn
+from modelling.two_stream import S3D_two_stream_v2
+from modelling.fusion import Lateral_Conn
 
 
 class S3D_four_stream(nn.Module):

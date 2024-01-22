@@ -1,7 +1,7 @@
 import torch, glob, os
 import torch.nn as nn
 from utils.misc import get_logger, neq_load_customized
-from VKNet.S3D_base import S3D_base, BasicConv3d
+from modelling.S3D_base import S3D_base, BasicConv3d
 
 BLOCK2SIZE = {1:64, 2:192, 3:480, 4:832, 5:1024}
 class S3Ds(S3D_base):
