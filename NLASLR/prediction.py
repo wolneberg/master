@@ -16,13 +16,13 @@ import torch
 from torch.nn.parallel import DistributedDataParallel as DDP, distributed
 import torch.nn.functional as F
 from torch import Tensor
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 from utils.misc import (
     get_logger,
     load_config,
     log_cfg,
     load_checkpoint,
-    make_logger, make_writer,
+    make_logger,
     set_seed,
     symlink_update,
     is_main_process, init_DDP, move_to_device,

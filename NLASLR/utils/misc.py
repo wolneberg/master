@@ -16,7 +16,7 @@ import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
 import yaml
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 import pickle
 import datetime
 
@@ -171,12 +171,12 @@ def make_logger(model_dir: str, log_file: str = "train.log") -> Logger:
             logging.getLogger("").addHandler(sh)
         return logger
 
-def make_writer(model_dir):
-    if is_main_process():
-        writer = SummaryWriter(log_dir=os.path.join(model_dir + "/tensorboard/"))
-    else:
-        writer = None
-    return writer
+# def make_writer(model_dir):
+#     if is_main_process():
+#         writer = SummaryWriter(log_dir=os.path.join(model_dir + "/tensorboard/"))
+#     else:
+#         writer = None
+#     return writer
 
 def log_cfg(cfg: dict, logger: Logger, prefix: str = "cfg"):
     """

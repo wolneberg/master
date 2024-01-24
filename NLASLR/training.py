@@ -13,14 +13,14 @@ sys.path.append(os.getcwd())#slt dir
 import torch
 from torch.nn.parallel import DistributedDataParallel as DDP, distributed
 import torch.nn.functional as F
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 from utils.misc import (
     load_config,
     log_cfg,
     load_checkpoint,
     move_to_device, neq_load_customized,
     make_model_dir,
-    make_logger, make_writer, make_wandb,
+    make_logger, make_wandb,
     set_seed,
     symlink_update,
     is_main_process, init_DDP,
