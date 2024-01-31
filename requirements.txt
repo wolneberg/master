@@ -1,0 +1,6 @@
+tensorflow
+numpy
+mediapy
+tensorflow_hub
+tensorflow_datasets
+pandas
