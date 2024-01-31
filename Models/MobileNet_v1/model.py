@@ -4,7 +4,11 @@ import numpy as np
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications import imagenet_utils
 
+
 mobile = tf.keras.applications.mobilenet.MobileNet()
+base_model = tf.keras.applications.MobileNet(input_shape=IMG_SHAPE,
+                                               include_top=False,
+                                               weights='imagenet')
 
 def prepare_image(file):
     img_path = 'Models/MobileNet_v1/data/MobileNet-samples/'
