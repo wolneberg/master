@@ -7,7 +7,7 @@ from tensorflow.keras.applications import imagenet_utils
 mobile = tf.keras.applications.mobilenet.MobileNet()
 
 def prepare_image(file):
-    img_path = 'data/MobileNet-samples/'
+    img_path = 'Models/MobileNet_v1/data/MobileNet-samples/'
     img = image.load_img(img_path + file, target_size=(224, 224))
     img_array = image.img_to_array(img)
     img_array_expanded_dims = np.expand_dims(img_array, axis=0)
