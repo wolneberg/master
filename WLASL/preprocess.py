@@ -4,19 +4,26 @@ import tensorflow as tf
 import random
 import cv2
 
-videos = pd.read_json('WLASL/data/nslt_100.json').transpose()
-filtered = videos[videos['subset'].str.contains('train')]
-f = open('WLASL/data/missing.txt', 'r')
-missing = []
-for line in f:
-  missing.append(line.strip())
-f.close()
+def get_video_subset(wlasl_samples, subset):
+    videos = pd.read_json(f'WLASL/data/{wlasl_samples}.json').transpose()
+    train_videos = videos[videos['subset'].str.contains(subset)].index.values.tolist()
+    return train_videos
 
-glosses = pd.read_json('WLASL/data/WLASL_v0.3.json')
-glosses = glosses.explode('instances').reset_index(drop=True).pipe(lambda x: pd.concat([x, pd.json_normalize(x['instances'])], axis=1)).drop('instances', axis=1)
-print(glosses.head())
+def get_missing_videos():
+    f = open('WLASL/data/missing.txt', 'r')
+    missing = []
+    for line in f:
+      missing.append(line.strip())
+    f.close()
+    return missing
 
-
+def get_glosses():
+    glosses = pd.read_json('WLASL/data/WLASL_v0.3.json')
+    glosses = glosses.explode('instances').reset_index(drop=True).pipe(
+  lambda x: pd.concat([x, pd.json_normalize(x['instances'])], axis=1)).drop(
+    'instances', axis=1)[['gloss', 'video_id']]
+        
+    return glosses
 
 """
 https://www.tensorflow.org/tutorials/load_data/video#create_frames_from_each_video_file
@@ -84,12 +91,31 @@ def frames_from_video_file(video_path, n_frames, output_size = (224,224), frame_
   return result
 
 
-def create_frames_from_each_video_file():
-  for index, row in filtered.iterrows():
-    video_id = f'{index:05}'
-    print(video_id)
-    print(missing[0])
-    if video_id not in missing:
-      frames = frames_from_video_file(f'WLASL/videos/{video_id:05}.mp4', 64)
-      print(frames.shape)
-      break
+def create_frames_from_each_video_file(video_id, missing):
+  if video_id not in missing:
+    frames = frames_from_video_file(f'WLASL/videos/{video_id}.mp4', 64)
+    return frames
+  return []
+
+def format_dataset(video_list, gloss_set, missing):
+  # frame_list = []
+  # for video_id in video_list:
+  #   frames = create_frames_from_each_video_file(f'{video_id:05}')
+  #   if len(frames)>0:
+  #     frame_list.append([video_id, frames])
+  frame_list = list(filter(lambda x: len(x[1])>0, 
+                      list(map(lambda video_id: [f'{video_id:05}', create_frames_from_each_video_file(f'{video_id:05}', missing)], 
+                               video_list))))
+  frame_set = pd.DataFrame(frame_list, columns=['video_id', 'frames'])
+  # print(frame_set.dtypes)
+  # print(gloss_set.dtypes)
+  frame_set = frame_set.merge(gloss_set, on='video_id')
+  target = frame_set.pop('gloss').to_list()
+  frame_set = frame_set['frames'].to_list()
+  print('ready to format')
+  # print(list(frame_set.items())[:4])
+  # print(frame_set[frame_set.isnull().any(axis=1)])
+  formatted = tf.data.Dataset.from_tensor_slices((frame_set, target))
+  #print(formatted.take(5))
+  print(list(formatted.as_numpy_iterator())[:4])
+  return formatted

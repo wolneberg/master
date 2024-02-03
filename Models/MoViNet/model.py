@@ -11,82 +11,118 @@ import tensorflow_hub as hub
 import tqdm
 import absl.logging
 
+from official.vision.configs import video_classification
+from official.projects.movinet.configs import movinet as movinet_configs
+from official.projects.movinet.modeling import movinet
+from official.projects.movinet.modeling import movinet_layers
+from official.projects.movinet.modeling import movinet_model
+
 tf.get_logger().setLevel('ERROR')
 absl.logging.set_verbosity(absl.logging.ERROR)
 mpl.rcParams.update({
     'font.size': 10,
 })
 
-with tf.io.gfile.GFile('Models/labels.txt') as f:
-  lines = f.readlines()
-  KINETICS_600_LABELS_LIST = [line.strip() for line in lines]
-  KINETICS_600_LABELS = tf.constant(KINETICS_600_LABELS_LIST)
+# with tf.io.gfile.GFile('Models/labels.txt') as f:
+#   lines = f.readlines()
+#   KINETICS_600_LABELS_LIST = [line.strip() for line in lines]
+#   KINETICS_600_LABELS = tf.constant(KINETICS_600_LABELS_LIST)
 
-def get_top_k(probs, k=5, label_map=KINETICS_600_LABELS):
-  """Outputs the top k model labels and probabilities on the given video."""
-  top_predictions = tf.argsort(probs, axis=-1, direction='DESCENDING')[:k]
-  top_labels = tf.gather(label_map, top_predictions, axis=-1)
-  top_labels = [label.decode('utf8') for label in top_labels.numpy()]
-  top_probs = tf.gather(probs, top_predictions, axis=-1).numpy()
-  return tuple(zip(top_labels, top_probs))
+# def get_top_k(probs, k=5, label_map=KINETICS_600_LABELS):
+#   """Outputs the top k model labels and probabilities on the given video."""
+#   top_predictions = tf.argsort(probs, axis=-1, direction='DESCENDING')[:k]
+#   top_labels = tf.gather(label_map, top_predictions, axis=-1)
+#   top_labels = [label.decode('utf8') for label in top_labels.numpy()]
+#   top_probs = tf.gather(probs, top_predictions, axis=-1).numpy()
+#   return tuple(zip(top_labels, top_probs))
 
-def predict_top_k(model, video, k=5, label_map=KINETICS_600_LABELS):
-  """Outputs the top k model labels and probabilities on the given video."""
-  outputs = model.predict(video[tf.newaxis])[0]
-  probs = tf.nn.softmax(outputs)
-  return get_top_k(probs, k=k, label_map=label_map)
+# def predict_top_k(model, video, k=5, label_map=KINETICS_600_LABELS):
+#   """Outputs the top k model labels and probabilities on the given video."""
+#   outputs = model.predict(video[tf.newaxis])[0]
+#   probs = tf.nn.softmax(outputs)
+#   return get_top_k(probs, k=k, label_map=label_map)
 
-def load_movinet_from_hub(model_id, model_mode, hub_version=3):
-  """Loads a MoViNet model from TF Hub."""
-  hub_url = f'https://tfhub.dev/tensorflow/movinet/{model_id}/{model_mode}/kinetics-600/classification/{hub_version}'
+backbone = movinet.Movinet(model_id='a0')
+model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=600)
+model.build([1, 1, 1, 1, 3])
 
-  encoder = hub.KerasLayer(hub_url, trainable=True)
+checkpoint_dir = 'Models/MoViNet/data/movinet_a0_base'
+checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
+checkpoint = tf.train.Checkpoint(model=model)
+status = checkpoint.restore(checkpoint_path)
+status.assert_existing_objects_matched()
+num_frames = 64
+batch_size = 8
+resolution = 172
 
-  inputs = tf.keras.layers.Input(
-      shape=[None, None, None, 3],
-      dtype=tf.float32)
+def build_classifier(backbone, num_classes, freeze_backbone=False):
+  """Builds a classifier on top of a backbone model."""
+  model = movinet_model.MovinetClassifier(
+      backbone=backbone,
+      num_classes=num_classes)
+  model.build([batch_size, num_frames, resolution, resolution, 3])
 
-  if model_mode == 'base':
-    inputs = dict(image=inputs)
-  else:
-    # Define the state inputs, which is a dict that maps state names to tensors.
-    init_states_fn = encoder.resolved_object.signatures['init_states']
-    state_shapes = {
-        name: ([s if s > 0 else None for s in state.shape], state.dtype)
-        for name, state in init_states_fn(tf.constant([0, 0, 0, 0, 3])).items()
-    }
-    states_input = {
-        name: tf.keras.Input(shape[1:], dtype=dtype, name=name)
-        for name, (shape, dtype) in state_shapes.items()
-    }
-
-    # The inputs to the model are the states and the video
-    inputs = {**states_input, 'image': inputs}
-
-  # Output shape: [batch_size, 600]
-  outputs = encoder(inputs)
-
-  model = tf.keras.Model(inputs, outputs)
-  model.build([1, 1, 1, 1, 3])
+  if freeze_backbone:
+    for layer in model.layers[:-1]:
+      layer.trainable = False
+    model.layers[-1].trainable = True
 
   return model
 
-def load_gif(file_path, image_size=(224, 224)):
-  """Loads a gif file into a TF tensor."""
-  with tf.io.gfile.GFile(file_path, 'rb') as f:
-    video = tf.io.decode_gif(f.read())
-  video = tf.image.resize(video, image_size)
-  video = tf.cast(video, tf.float32) / 255.
-  return video
+def train_and_eval(format_dataset, train_videos, val_videos, test_videos, glosses, missing):
+  train_dataset = format_dataset(train_videos, glosses, missing)
 
-model = load_movinet_from_hub('a2', 'base', hub_version=3)
+# Wrap the backbone with a new classifier to create a new classifier head
+# with num_classes outputs (101 classes for UCF101).
+# Freeze all layers except for the final classifier head.
+  model = build_classifier(backbone, 100, freeze_backbone=False)
 
-video = load_gif('Models/jumpingjack.gif', image_size=(172, 172))
+  num_epochs = 3
+  train_steps = len(train_videos) // batch_size
+  total_train_steps = train_steps * num_epochs
+  test_steps = len(val_videos) // batch_size
 
-# Show video
-print(video.shape)
+  loss_obj = tf.keras.losses.CategoricalCrossentropy(
+  from_logits=True,
+  label_smoothing=0.1)
 
-outputs = predict_top_k(model, video)
+  metrics = [
+  tf.keras.metrics.TopKCategoricalAccuracy(
+      k=1, name='top_1', dtype=tf.float32),
+  tf.keras.metrics.TopKCategoricalAccuracy(
+      k=5, name='top_5', dtype=tf.float32),
+  ]
 
-for label, prob in outputs:
-  print(label, prob)
+  initial_learning_rate = 0.01
+  learning_rate = tf.keras.optimizers.schedules.CosineDecay(
+  initial_learning_rate, decay_steps=total_train_steps,
+  )
+  optimizer = tf.keras.optimizers.RMSprop(
+  learning_rate, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0)
+
+  model.compile(loss=loss_obj, optimizer=optimizer, metrics=metrics)
+
+
+  checkpoint_path = "Models/MoViNet/data/training_1/cp.ckpt"
+  checkpoint_dir = os.path.dirname(checkpoint_path)
+
+  cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+                                                save_weights_only=True,
+                                                verbose=1)
+
+  results = model.fit(train_dataset, validation_data=val_videos, epochs=num_epochs, 
+                  steps_per_epoch=train_steps, validation_steps=test_steps, callbacks=[cp_callback])
+
+  print(results)
+
+  loss, accuracy = model.evaluate(test_videos, batch_size=batch_size)
+  print(loss, accuracy)
+# print(model.summary())
+
+
+#print(video.shape)
+
+# outputs = predict_top_k(model, video)
+
+# for label, prob in outputs:
+#   print(label, prob)

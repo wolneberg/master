@@ -1,2 +1,4 @@
 WLASL/videos
 WLASL/data
+**/__pycache__/
+.DS_Store
