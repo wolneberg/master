@@ -4,3 +4,6 @@ mediapy
 tensorflow_hub
 tensorflow_datasets
 pandas
+opencv-python
+nodejs
+microsoft-openjdk17
