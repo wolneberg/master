@@ -52,7 +52,7 @@ checkpoint = tf.train.Checkpoint(model=model)
 status = checkpoint.restore(checkpoint_path)
 status.assert_existing_objects_matched()
 num_frames = 64
-batch_size = 8
+batch_size = 4
 resolution = 172
 
 def build_classifier(backbone, num_classes, freeze_backbone=False):

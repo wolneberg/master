@@ -5,4 +5,4 @@ tensorflow_hub
 tensorflow_datasets
 pandas
 opencv-python
--U "tf-models-official"
+matplotlib
