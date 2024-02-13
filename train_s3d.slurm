@@ -1,12 +1,12 @@
 #!/bin/sh
 #SBATCH --partition=CPUQ
 #SBATCH --account=ie-idi
-#SBATCH --time=1-10:00:00
+#SBATCH --time=01:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=40G            
-#SBATCH --job-name="train1"
-#SBATCH --output=train1.out
+#SBATCH --mem=10G            
+#SBATCH --job-name="s3d"
+#SBATCH --output=s3d.out
 
 #SBATCH --mail-type=end
 #SBATCH --mail-type=fail
@@ -31,12 +31,13 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 pip3 install -q -r requirements.txt
-pip3 install -q tf-models-official
+pip3 install -q tf-models-nightly
 
-echo "wlasl-100: Adam optimizer initial lr=0.001, epochs=15, med shuffle av train dataset, left_after_freeze=3"
+echo "s3d: "
 
-python3 train.py
+python3 s3d_train.py
 
-echo "Finished running movient.py"
+echo "Finished running s3d_train.py"
 
 deactivate
+

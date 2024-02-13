@@ -13,13 +13,14 @@ class LRFinder(Callback):
     the `plot` method.
     """
 
-    def __init__(self, start_lr: float = 1e-7, end_lr: float = 10, max_steps: int = 100, smoothing=0.9):
+    def __init__(self, start_lr: float = 1e-7, end_lr: float = 10, max_steps: int = 100, smoothing=0.9, name="default"):
         super(LRFinder, self).__init__()
         self.start_lr, self.end_lr = start_lr, end_lr
         self.max_steps = max_steps
         self.smoothing = smoothing
         self.step, self.best_loss, self.avg_loss, self.lr = 0, 0, 0, 0
         self.lrs, self.losses = [], []
+        self.name = name
 
     def on_train_begin(self, logs=None):
         self.step, self.best_loss, self.avg_loss, self.lr = 0, 0, 0, 0
@@ -60,4 +61,4 @@ class LRFinder(Callback):
         ax.set_xscale('log')
         ax.xaxis.set_major_formatter(plt.FormatStrFormatter('%.0e'))
         ax.plot(self.lrs, self.losses)
-        plt.savefig('Models/MoViNet/data/plots/lr1.png')
+        plt.savefig(f'Models/MoViNet/data/plots/{self.name}.png')

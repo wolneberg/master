@@ -8,7 +8,7 @@ import os
 from official.projects.movinet.modeling import movinet
 from official.projects.movinet.modeling import movinet_model
 
-from lr_finder import LRFinder
+# from lr_finder import LRFinder
 
 
 num_frames = 64 
@@ -147,12 +147,22 @@ train_dataset = train_dataset.batch(batch_size)
 val_dataset = val_dataset.batch(batch_size)
 test_dataset = test_dataset.batch(batch_size)
 
-print('Done formatting the dataset ', val_dataset.take(1))
+print('Done formatting the dataset ')
 
 #Building and fine-tuning the MoViNet model
 backbone = movinet.Movinet(model_id='a0')
+# print(backbone.summary())
+
+def freeze_layers(num_layers_left):
+    for layer in backbone.layers[:-num_layers_left]:
+        layer.trainable = False
+
+freeze_layers(10)
+
+# print(backbone.summary())
 model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=600)
 model.build([1, 1, 1, 1, 3])
+# print(model.summary())
 
 checkpoint_dir = 'Models/MoViNet/data/movinet_a0_base'
 checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
@@ -185,7 +195,7 @@ def train_and_eval(trainset, train_videos, valset, test_videos):
     total_train_steps = train_steps * num_epochs
     test_steps = len(valset) // batch_size
 
-    #loss_obj = tf.keras.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=0.1)
+    loss_obj = tf.keras.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=0.1)
 
     metrics = [
     tf.keras.metrics.TopKCategoricalAccuracy(
@@ -195,11 +205,11 @@ def train_and_eval(trainset, train_videos, valset, test_videos):
     ]
     
 
-    loss_obj = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+    # loss_obj = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
 
     # optimizer = tf.keras.optimizers.Adam(learning_rate = 0.005)
     
-    initial_learning_rate = 0.05
+    initial_learning_rate = 0.001
     learning_rate = tf.keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
     optimizer = tf.keras.optimizers.RMSprop(learning_rate, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0)
     
@@ -207,7 +217,7 @@ def train_and_eval(trainset, train_videos, valset, test_videos):
     #callbacks = [tf.keras.callbacks.TensorBoard(),]
      
 
-    checkpoint_path = "Models/MoViNet/data/training_6/cp.ckpt"
+    checkpoint_path = "Models/MoViNet/data/training_9/cp.ckpt"
     checkpoint_dir = os.path.dirname(checkpoint_path)
 
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
@@ -220,34 +230,49 @@ def train_and_eval(trainset, train_videos, valset, test_videos):
     
     eval_results = model.evaluate(test_videos, batch_size=batch_size)
     print(eval_results)
-    model.save('Models/MoViNet/data/MoViNet_a0_WLASL100_6', save_format='tf')
+    model.save('Models/MoViNet/data/MoViNet_a0_WLASL100_9', save_format='tf')
 
-def find_learning_rate(trainset):
-# Wrap the backbone with a new classifier to create a new classifier head
-    # with num_classes outputs (101 classes for UCF101).
-    # Freeze all layers except for the final classifier head
+# def find_learning_rate(trainset, name):
+# # Wrap the backbone with a new classifier to create a new classifier head
+#     # with num_classes outputs (101 classes for UCF101).
+#     # Freeze all layers except for the final classifier head
 
-    lr_finder = LRFinder()
+#     lr_finder = LRFinder(name=name)
 
-    #loss_obj = tf.keras.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=0.1)
+#     #loss_obj = tf.keras.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=0.1)
 
-    loss_obj = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+#     loss_obj = tf.keras.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=0.1)
 
-    # optimizer = tf.keras.optimizers.Adam(learning_rate = 0.005)
+#     optimizer = tf.keras.optimizers.Adam()
     
-    # initial_learning_rate = 0.05
-    # learning_rate = tf.keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
-    # optimizer = tf.keras.optimizers.RMSprop(learning_rate, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0)
+#     # initial_learning_rate = 0.01
+#     # learning_rate = tf.keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
+#     # optimizer = tf.keras.optimizers.RMSprop(learning_rate, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0)
     
-    model.compile(loss=loss_obj, optimizer="adam")
+#     model.compile(loss=loss_obj, optimizer=optimizer)
     
-    _ = model.fit(trainset, epochs=5, callbacks=[lr_finder],verbose=False)
-    lr_finder.plot()
+#     _ = model.fit(trainset, epochs=20, callbacks=[lr_finder],verbose=False)
+#     lr_finder.plot()
 
 
 #Training and evaluation on WLASL100
-print('Finding learning rate')
-find_learning_rate(train_dataset)
+# print('Finding learning rate')
+# find_learning_rate(train_dataset)
 
-# print('Starting training and evaluation')
-# train_and_eval(train_dataset, train_videos, val_dataset, test_dataset)
+print('Starting training and evaluation')
+train_and_eval(train_dataset, train_videos, val_dataset, test_dataset)
+    
+# checkpoint_dir = 'Models/MoViNet/data/movinet_a0_base'
+# checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
+
+# for i in range(21):
+#     print(f'freezing {i} layers\n')
+#     freeze_layers(i)
+#     model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=600)
+#     model.build([1, 1, 1, 1, 3])
+#     checkpoint = tf.train.Checkpoint(model=model)
+#     status = checkpoint.restore(checkpoint_path)
+#     status.assert_existing_objects_matched()
+#     model = build_classifier(backbone, num_classes)
+#     print('Finding learning rate...\n')
+#     find_learning_rate(train_dataset, name=f'adam_{i}')

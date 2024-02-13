@@ -1,12 +1,12 @@
 #!/bin/sh
 #SBATCH --partition=CPUQ
 #SBATCH --account=ie-idi
-#SBATCH --time=05:00:00
+#SBATCH --time=1-05:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=40G            
-#SBATCH --job-name="movinet6"
-#SBATCH --output=movinet6.out
+#SBATCH --job-name="movinet"
+#SBATCH --output=adam_find_lr.out
 
 #SBATCH --mail-type=end
 #SBATCH --mail-type=fail
@@ -33,7 +33,7 @@ source .venv/bin/activate
 pip3 install -q -r requirements.txt
 pip3 install -q tf-models-official
 
-echo "wlas-100: find lr, adam optimizer, 5 epochs, a0_base"
+echo "finding lrs for different number of frozen layers, epochs 20, adam"
 
 python3 Models/MoViNet/movinet.py
 
