@@ -5,3 +5,6 @@ WLASL/data
 .venv
 *.out
 Models/MoViNet/data
+.gpu
+.s3d
+.gpu2

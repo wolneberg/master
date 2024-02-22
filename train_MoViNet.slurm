@@ -1,12 +1,14 @@
 #!/bin/sh
 #SBATCH --partition=CPUQ
 #SBATCH --account=ie-idi
-#SBATCH --time=1-10:00:00
+#SBATCH --time=3-00:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=40G            
-#SBATCH --job-name="train1"
-#SBATCH --output=train1.out
+#SBATCH --mem=60G            
+#SBATCH --job-name="movinet4"
+#SBATCH --output=movinet4.out
+
+
 
 #SBATCH --mail-type=end
 #SBATCH --mail-type=fail
@@ -24,19 +26,29 @@ echo "We are using $SLURM_CPUS_ON_NODE cores"
 echo "We are using $SLURM_CPUS_ON_NODE cores per node"
 echo "Total of $SLURM_NTASKS cores"
 
-module purge
-module load Python/3.11.5-GCCcore-13.2.0
+# module purge
+# module load Python/3.10.4-GCCcore-11.3.0
 
-python3 -m venv .venv
-source .venv/bin/activate
+# module load cuDNN/8.8.0.121-CUDA-12.0.0
+# module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0
+source .gpu2/bin/activate
 
-pip3 install -q -r requirements.txt
-pip3 install -q tf-models-official
+# module load Anaconda3/2023.09-0
+# conda create --name .idun
+# conda activate .idun
 
-echo "wlasl-100: Adam optimizer initial lr=0.001, epochs=15, med shuffle av train dataset, left_after_freeze=3"
+# module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0
+# module load cuDNN/8.8.0.121-CUDA-12.0.0
 
-python3 train.py
+pip install -q -r requirements.txt
+pip install -q tf-models-official
 
-echo "Finished running movient.py"
+echo "movinet med gpu"
+echo "wlasl-100: rmsprop, epochs=20, med shuffle av train dataset, over"
+
+python train.py
+
+echo "Finished running train.py"
 
 deactivate
+# conda deactivate

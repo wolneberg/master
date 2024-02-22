@@ -12,9 +12,6 @@
 #SBATCH --mail-type=fail
 #SBATCH --mail-user=ingrimwo@stud.ntnu.no
 
-#mem: total memory per node
-#mem-per-cpu: memory per cpu-core
-
 echo "We are running from this directory: $SLURM_SUBMIT_DIR"
 echo "The name of the job is: $SLURM_JOB_NAME"
 echo "Th job ID is $SLURM_JOB_ID"
@@ -24,20 +21,14 @@ echo "We are using $SLURM_CPUS_ON_NODE cores"
 echo "We are using $SLURM_CPUS_ON_NODE cores per node"
 echo "Total of $SLURM_NTASKS cores"
 
-module purge
-module load Python/3.11.5-GCCcore-13.2.0
+# module purge
+module load Python/3.10.4-GCCcore-11.3.0
+# python -m venv .s3d
+source .s3d/bin/activate
 
-python3 -m venv .venv
-source .venv/bin/activate
+# module load PyTorch/1.12.1-foss-2022a-CUDA-11.7.0
+pip install -q torch torchvision torchaudio pandas matplotlib
 
-pip3 install -q -r requirements.txt
-pip3 install -q tf-models-nightly
-
-echo "s3d: "
-
-python3 s3d_train.py
-
-echo "Finished running s3d_train.py"
+python train_s3d.py
 
 deactivate
-

@@ -1,25 +1,46 @@
 import numpy as np
-import pandas as pd
 import tensorflow as tf
-import matplotlib as plt
+import matplotlib.pyplot as plt
+import keras
 
-import os
 from official.projects.movinet.modeling import movinet
 from official.projects.movinet.modeling import movinet_model
 
 model_id = 'a0'
-num_frames = 64 
-batch_size = 4
+num_frames = 16
+batch_size = 8
 resolution = 172
 num_classes = 100
 activation = 'softmax'
 
+print('movinet kjører')
+
 tf.keras.backend.clear_session()
 
+# print(tf.config.list_physical_devices('GPU'))
+
+# strategy = tf.distribute.MirroredStrategy()
+# print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+
+
+def build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation, freeze_backbone=False):
+  """Builds a classifier on top of a backbone model."""
+  model = movinet_model.MovinetClassifier(
+      backbone=backbone,
+      num_classes=num_classes, activation=activation)
+  model.build([batch_size, num_frames, resolution, resolution, 3])
+  if freeze_backbone:
+    for layer in model.layers[:-1]:
+        layer.trainable = False
+    model.layers[-1].trainable = True
+  return model
+
+# with strategy.scope():
+
 backbone = movinet.Movinet(model_id=model_id)
-for layer in backbone.layers[:-3]:
-      layer.trainable = False
-print(backbone.summary())
+# for layer in backbone.layers[:-3]:
+#       layer.trainable = False
+
 # Set num_classes=600 to load the pre-trained weights from the original model
 model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=600)
 model.build([None, None, None, None, 3])
@@ -32,13 +53,18 @@ checkpoint = tf.train.Checkpoint(model=model)
 status = checkpoint.restore(checkpoint_path)
 status.assert_existing_objects_matched()
 
-def build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation):
-  """Builds a classifier on top of a backbone model."""
-  model = movinet_model.MovinetClassifier(
-      backbone=backbone,
-      num_classes=num_classes, activation=activation)
-  model.build([batch_size, num_frames, resolution, resolution, 3])
-  return model
+build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation, freeze_backbone=True)
+
+loss_obj = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+  # optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
+  # train_steps = len(train_videos) // batch_size
+  # total_train_steps = train_steps * epochs
+  # initial_learning_rate = 0.01
+  # learning_rate = keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
+  # optimizer = keras.optimizers.RMSprop(learning_rate, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0)
+
+model.compile(loss=loss_obj, optimizer='rmsprop', metrics=['accuracy'])
 
 def plot_history(history, name):
   """
@@ -73,22 +99,26 @@ def plot_history(history, name):
   ax2.set_xlabel('Epoch')
   ax2.legend(['Train', 'Validation'])
 
-  plt.savefig(f'Models/MoViNet/data/results/{name}')
+  plt.savefig(f'Models/MoViNet/data/results/{name}.png')
 
-def train(train_ds, val_ds, epochs):
-    model = build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation)
+def train(train_ds, val_ds, epochs, name, train_videos):
+    print("Training a movinet model...")
+    # model = build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation)
 
-    print(model.summary())
+    # loss_obj = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
-    loss_obj = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    # # optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
+    # # train_steps = len(train_videos) // batch_size
+    # # total_train_steps = train_steps * epochs
+    # # initial_learning_rate = 0.01
+    # # learning_rate = keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
+    # # optimizer = keras.optimizers.RMSprop(learning_rate, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0)
 
-    optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
+    # model.compile(loss=loss_obj, optimizer='rmsprop', metrics=['accuracy'])
 
-    model.compile(loss=loss_obj, optimizer=optimizer, metrics=['accuracy'])
+    results = model.fit(train_ds, validation_data=val_ds, epochs=epochs, verbose=2)
 
-    results = model.fit(train_ds, validation_data=val_ds, epochs=epochs, validation_freq=1, verbose=2)
-
-    plot_history(results)
+    plot_history(results, name)
 
 
 
