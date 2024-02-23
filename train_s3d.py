@@ -1,17 +1,52 @@
+import torch
+import torchvision
+
+import WLASL.transforms
 from WLASL.extraction import get_glosses, get_video_subset
-from WLASL.pytorch_format import WLASLDataset
+from WLASL.pytorch_format import WLASLDataset, make_dataset
 from Models.S3D.s3d import train
 
 num_classes = 100
 
+num_epochs = 5
+
+# Check if GPU is availabe and required libraries are installed
+print(torch.cuda.is_available())
+
 # Load data
 print('Getting train videos...')
 train_videos = get_video_subset(f'nslt_{num_classes}', 'train')
+print('Getting validation videos...')
+val_videos = get_video_subset(f'nslt_{num_classes}', 'val')
 
 print('Getting glosses')
 glosses = get_glosses()
 
-train_dataset = WLASLDataset('WLASL/videos/', train_videos, glosses)
+train_dataset = make_dataset('WLASL/videos/', train_videos, glosses)
+val_dataset = make_dataset('WLASL/videos/', val_videos, glosses)
 
-print(train_dataset.__getitem__(2))
+train_dataset = WLASLDataset(train_dataset, transform=torchvision.transforms.Compose([
+            WLASL.transforms.VideoFilePathToTensor(max_len=50, fps=10, padding_mode='last'),
+            WLASL.transforms.VideoResize([172, 172])]))
+val_dataset = WLASLDataset(val_dataset, transform=torchvision.transforms.Compose([
+    WLASL.transforms.VideoFilePathToTensor(max_len=50, fps=10,padding_mode='last'), 
+    WLASL.transforms.VideoResize([172,172])]))
+
+# video, label = train_dataset[0]
+# video, label = val_dataset[0]
+# print(video.size(), label)
+# frame1 = torchvision.transforms.ToPILImage()(video[:, 29, :, :])
+# frame2 = torchvision.transforms.ToPILImage()(video[:, 39, :, :])
+# frame1.show()
+# frame2.show()
+
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True)
+val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=4, shuffle= True)
+
+# for videos, labels in test_loader:
+#     print(videos.size(), label)
 # Train
+    
+device = ('cuda' if torch.cuda.is_available() else 'cpu')
+
+train(num_epochs, num_classes, train_loader, val_loader, device)
