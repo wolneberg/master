@@ -3,7 +3,10 @@ import pandas as pd
 # Preprocessing of WLASL
 def get_video_subset(wlasl_samples, subset):
     videos = pd.read_json(f'WLASL/data/{wlasl_samples}.json').transpose()
-    train_videos = videos[videos['subset'].str.contains(subset)].index.values.tolist()
+    if (subset == 'all'):
+        train_videos =videos.index.values.tolist()
+    else:
+        train_videos = videos[videos['subset'].str.contains(subset)].index.values.tolist()
     return train_videos
 
 def get_missing_videos():

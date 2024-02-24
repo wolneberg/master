@@ -1,18 +1,19 @@
 #!/bin/sh
-#SBATCH --partition=CPUQ
+#SBATCH --partition=GPUQ
 #SBATCH --account=ie-idi
-#SBATCH --time=3-00:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=60G            
-#SBATCH --job-name="movinet4"
-#SBATCH --output=movinet4.out
+#SBATCH --job-name="SLR"
+#SBATCH --output=MoViNet_test3.out
+#SBATCH --gres=gpu:1
 
 
 
 #SBATCH --mail-type=end
 #SBATCH --mail-type=fail
-#SBATCH --mail-user=ingrimwo@stud.ntnu.no
+#SBATCH --mail-user=helenaml@stud.ntnu.no
 
 #mem: total memory per node
 #mem-per-cpu: memory per cpu-core
@@ -26,12 +27,19 @@ echo "We are using $SLURM_CPUS_ON_NODE cores"
 echo "We are using $SLURM_CPUS_ON_NODE cores per node"
 echo "Total of $SLURM_NTASKS cores"
 
-# module purge
-# module load Python/3.10.4-GCCcore-11.3.0
+echo "--- nvidia-smi ---"
+nvidia-smi
 
-# module load cuDNN/8.8.0.121-CUDA-12.0.0
+module purge
+module load Python/3.10.4-GCCcore-11.3.0
+# module load  Python/3.11.3-GCCcore-12.3.0
+
+module load cuDNN/8.8.0.121-CUDA-12.0.0
+# module load cuDNN/8.4.1.50-CUDA-11.7.0 
 # module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0
-source .gpu2/bin/activate
+module load TensorFlow/2.13.0-foss-2023a
+
+# source .gpu2/bin/activate
 
 # module load Anaconda3/2023.09-0
 # conda create --name .idun
@@ -44,11 +52,11 @@ pip install -q -r requirements.txt
 pip install -q tf-models-official
 
 echo "movinet med gpu"
-echo "wlasl-100: rmsprop, epochs=20, med shuffle av train dataset, over"
+echo "wlasl-100: rmsprop, epochs=30, not freezed backbone, med shuffle av train dataset, over"
 
 python train.py
 
 echo "Finished running train.py"
 
-deactivate
+# deactivate
 # conda deactivate

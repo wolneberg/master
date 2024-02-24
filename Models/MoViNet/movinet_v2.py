@@ -14,13 +14,19 @@ num_classes = 100
 activation = 'softmax'
 
 print('movinet kjører')
+print(f'model: {model_id}, classes: {num_classes}, batch: {batch_size}, resolution: {resolution}, activation: {activation}')
 
 tf.keras.backend.clear_session()
 
-# print(tf.config.list_physical_devices('GPU'))
+try:
+  print(tf.config.list_physical_devices('GPU'))
+  strategy = tf.distribute.MirroredStrategy()
+  print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+except:
+  print('gikk ikke å printe')
 
-# strategy = tf.distribute.MirroredStrategy()
-# print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+
+
 
 
 def build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation, freeze_backbone=False):
@@ -53,7 +59,7 @@ checkpoint = tf.train.Checkpoint(model=model)
 status = checkpoint.restore(checkpoint_path)
 status.assert_existing_objects_matched()
 
-build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation, freeze_backbone=True)
+build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation, freeze_backbone=False)
 
 loss_obj = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 

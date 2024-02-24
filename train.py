@@ -5,8 +5,10 @@ from Models.MoViNet.movinet_v2 import train
 
 batch_size = 8
 num_classes = 100
-epochs = 20
-name = 'movinet3'
+epochs = 30
+name = 'MoViNet'
+
+print(f'{name}, epochs: {epochs}, classes: {num_classes}, batch size: {batch_size}')
 
 # test_video = frames_from_video_file('WLASL/videos/00339.mp4', 10)
 # print(test_video.shape)
@@ -15,8 +17,8 @@ print('Getting train videos...\n')
 train_videos = get_video_subset(f'nslt_{num_classes}', 'train')
 print('\nGetting validation videos...\n')
 val_videos = get_video_subset(f'nslt_{num_classes}', 'val')
-# # print('\nGetting test videos...\n')
-# # test_videos = get_video_subset(f'nslt_{num_classes}', 'test')
+print('\nGetting test videos...\n')
+test_videos = get_video_subset(f'nslt_{num_classes}', 'test')
 # print('\nGetting missing videos...\n')
 # missing = get_missing_videos()
 print('Getting glosses...\n')
@@ -30,7 +32,7 @@ print('formatting train...')
 train_dataset = format_dataset(train_set, gloss_list, over=True)
 print('formatting val...')
 val_dataset = format_dataset(val_set, gloss_list, over=True)
-# # print(train_dataset.take(2))
+print(train_dataset.take(2))
 # # print(train_dataset.element_spec)
 # # test_dataset = format_dataset(test_videos, glosses, num_classes=num_classes, missing=missing)
 
