@@ -1,12 +1,12 @@
 #!/bin/sh
 #SBATCH --partition=GPUQ
 #SBATCH --account=ie-idi
-#SBATCH --time=01:00:00
+#SBATCH --time=23:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=10G            
-#SBATCH --job-name="s3d"
-#SBATCH --output=s3d.out
+#SBATCH --job-name="s3d1"
+#SBATCH --output=s3d1.out
 #SBATCH --gres=gpu:1
 
 #SBATCH --mail-type=end
@@ -22,14 +22,16 @@ echo "We are using $SLURM_CPUS_ON_NODE cores"
 echo "We are using $SLURM_CPUS_ON_NODE cores per node"
 echo "Total of $SLURM_NTASKS cores"
 
-# module purge
+module purge
 module load Python/3.10.4-GCCcore-11.3.0
 #module load cuDNN/8.8.0.121-CUDA-12.0.0
 # python -m venv .s3d # for å lage virutal environment, trenger bare bruke en gang
-source .s3d/bin/activate
+# source .s3d/bin/activate
 
 # module load PyTorch/1.12.1-foss-2022a-CUDA-11.7.0
 pip install -q -r req.txt
+
+echo "fine tuning all layers"
 
 python train_s3d.py
 

@@ -1,6 +1,5 @@
 import os
 
-from typing import Optional, Callable
 from torchvision.datasets.vision import VisionDataset
 
 def make_dataset(path, video_subset, label_df):
@@ -13,7 +12,8 @@ def make_dataset(path, video_subset, label_df):
     video_path = path + f'{video_id:05}' + '.mp4'
     # Check if the videopath exists
     if os.path.isfile(video_path):
-      label = label_df[label_df['video_id'] == f'{video_id:05}'].iloc[0]['gloss']
+      label = label_df[label_df['video_id'] == f'{video_id:05}'].iloc[0]['gloss_id']
+      label = int(label)
       dataset.append((video_path, label))
   return dataset
 

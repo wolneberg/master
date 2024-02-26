@@ -8,3 +8,4 @@ Models/MoViNet/data
 .gpu
 .s3d
 .gpu2
+Models/S3D/video_classification
