@@ -17,7 +17,7 @@ def build_model(fine_tune=True, num_classes=100, trainable_layers=0):
         for params in model.parameters():
             params.requires_grad = False
     if trainable_layers > 0:
-        for params in model.parameters()[-trainable_layers]:
+        for params in model.features[-trainable_layers:].parameters():
             params.requires_grad = True
     model.classifier[1] = nn.Conv3d(1024, num_classes, kernel_size=(1, 1, 1), stride=(1, 1, 1))
     return model
