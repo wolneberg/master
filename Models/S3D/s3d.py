@@ -6,7 +6,7 @@ from torchvision import models
 from torch.utils.data.dataloader import default_collate
 import torch.optim as optim
 
-def build_model(fine_tune=True, num_classes=100):
+def build_model(fine_tune=True, num_classes=100, trainable_layers=0):
     model = models.video.s3d(weights='DEFAULT')
     if fine_tune:
         print('[INFO]: Fine-tuning all layers...')
@@ -16,6 +16,9 @@ def build_model(fine_tune=True, num_classes=100):
         print('[INFO]: Freezing hidden layers...')
         for params in model.parameters():
             params.requires_grad = False
+    if trainable_layers > 0:
+        for params in model.parameters()[-trainable_layers]:
+            params.requires_grad = True
     model.classifier[1] = nn.Conv3d(1024, num_classes, kernel_size=(1, 1, 1), stride=(1, 1, 1))
     return model
 
@@ -29,9 +32,8 @@ def train_one_epoch(model, trainloader, optimizer, criterion, device):
     # https://github.com/pytorch/vision/blob/main/references/video_classification/train.py 
     model = model.to(device)
     model.train()
-    print('Training')
     train_running_loss = 0.0
-    train_running_correct = 0
+    train_running_correct = 0.0
     bs_accumuator = 0
     counter = 0
     for data in trainloader:
@@ -56,15 +58,14 @@ def train_one_epoch(model, trainloader, optimizer, criterion, device):
         optimizer.step()
     # Loss and accuracy for the complete epoch.
     epoch_loss = train_running_loss / counter
-    epoch_acc = 100. * (train_running_correct / bs_accumuator)
+    epoch_acc = (train_running_correct / bs_accumuator) #regner den ut accuracy i prosent though?
     return epoch_loss, epoch_acc
 
 def validate(model, testloader, criterion, device):
     model = model.to(device)
     model.eval()
-    print('Validation')
     valid_running_loss = 0.0
-    valid_running_correct = 0
+    valid_running_correct = 0.0
     bs_accumuator = 0
     counter = 0
     with torch.no_grad():
@@ -86,7 +87,7 @@ def validate(model, testloader, criterion, device):
         
     # Loss and accuracy for the complete epoch.
     epoch_loss = valid_running_loss / counter
-    epoch_acc = 100. * (valid_running_correct / bs_accumuator)
+    epoch_acc = (valid_running_correct / bs_accumuator)
     return epoch_loss, epoch_acc
     
 #Plots
@@ -112,8 +113,8 @@ def plot_results(train_loss, valid_loss, train_acc, valid_acc, name):
     ax2.set_title('Accuracy')
     ax2.plot(train_acc,  label = 'train')
     ax2.plot(valid_acc, label = 'test')
+    ax2.set_ylim(0,1)
     ax2.set_ylabel('Accuracy')
-    ax2.set_ylim([0, 1])
     ax2.set_xlabel('Epoch')
     ax2.legend(['Train', 'Validation'])
 
@@ -121,11 +122,13 @@ def plot_results(train_loss, valid_loss, train_acc, valid_acc, name):
 
 
 # Training loop.
-def train(num_epochs, num_classes, train_loader, valid_loader, device, fine_tune, name):
-    model = build_model(fine_tune=fine_tune, num_classes=num_classes)
-    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
+def train(num_epochs, num_classes, train_loader, valid_loader, device, fine_tune, name, trainable_layers=0):
+    model = build_model(fine_tune=fine_tune, num_classes=num_classes, trainable_layers=trainable_layers)
+    optimizer = optim.RMSprop(model.parameters(), lr=0.01)
+    # optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
     criterion = nn.CrossEntropyLoss()
-
+    print(f"trainable layers: {trainable_layers}")
+    print(f"Optimizer: {optimizer}")
     # Lists to keep track of losses and accuracies.
     train_loss, valid_loss = [], []
     train_acc, valid_acc = [], []
