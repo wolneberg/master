@@ -1,6 +1,5 @@
-tensorflow
-numpy
 mediapy
-tensorflow_hub
-tensorflow_datasets
-pandas
+tensorflow
+opencv-python
+matplotlib
+einops
