@@ -1,12 +1,12 @@
 #!/bin/sh
 #SBATCH --partition=GPUQ
 #SBATCH --account=ie-idi
-#SBATCH --time=2-00:00:00
+#SBATCH --time=01:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=60G            
+#SBATCH --mem=100G            
 #SBATCH --job-name="SLR"
-#SBATCH --output=MoViNet_test3.out
+#SBATCH --output=Models/MoViNet/Output/movinet_freez10_2.out
 #SBATCH --gres=gpu:1
 
 
@@ -49,7 +49,10 @@ module load TensorFlow/2.13.0-foss-2023a
 # module load cuDNN/8.8.0.121-CUDA-12.0.0
 
 pip install -q -r requirements.txt
+# pip install seaborn
+# pip install tf2onnx
 pip install -q tf-models-official
+pip install -q git+https://github.com/tensorflow/docs
 
 echo "movinet med gpu"
 echo "wlasl-100: rmsprop, epochs=30, not freezed backbone, med shuffle av train dataset, over"

@@ -1,5 +1,10 @@
 mediapy
 tensorflow
+tf2onnx
+onnx
 opencv-python
 matplotlib
 einops
+pyyaml
+h5py
+seaborn

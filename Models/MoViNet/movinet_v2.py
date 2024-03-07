@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -5,18 +6,6 @@ import keras
 
 from official.projects.movinet.modeling import movinet
 from official.projects.movinet.modeling import movinet_model
-
-model_id = 'a0'
-num_frames = 16
-batch_size = 8
-resolution = 172
-num_classes = 100
-activation = 'softmax'
-
-print('movinet kjører')
-print(f'model: {model_id}, classes: {num_classes}, batch: {batch_size}, resolution: {resolution}, activation: {activation}')
-
-tf.keras.backend.clear_session()
 
 try:
   print(tf.config.list_physical_devices('GPU'))
@@ -26,14 +15,35 @@ except:
   print('gikk ikke å printe')
 
 
-
-
-
-def build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation, freeze_backbone=False):
+def build_classifier(model_id, batch_size, num_frames, resolution, num_classes, unFreez, activation, freeze_backbone=False):
   """Builds a classifier on top of a backbone model."""
-  model = movinet_model.MovinetClassifier(
-      backbone=backbone,
-      num_classes=num_classes, activation=activation)
+  # tf.keras.backend.clear_session()
+  # tf.keras.backend.clear_session()
+  
+  backbone = movinet.Movinet(model_id=model_id[:2])
+  backbone.trainable = True
+  for layer in backbone.layers[:-unFreez]:
+        layer.trainable = False
+
+  # Set num_classes=600 to load the pre-trained weights from the original model
+  model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=600)
+  model.build([None, None, None, None, 3])
+
+  # Load pre-trained weights
+
+  checkpoint_dir = f'Models/MoViNet/Backbone/movinet_{model_id}'
+  checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
+  checkpoint = tf.train.Checkpoint(model=model)
+  status = checkpoint.restore(checkpoint_path)
+  status.assert_existing_objects_matched()
+
+  # model = movinet_model.MovinetClassifier(
+  #     backbone=backbone,
+  #     num_classes=num_classes, activation=activation)
+  x = model.layers[-1].output
+  # print(x)
+  output = tf.keras.layers.Dense(units=num_classes, activation=activation)(x)
+  model = tf.keras.Model(inputs=model.inputs, outputs=output)
   model.build([batch_size, num_frames, resolution, resolution, 3])
   if freeze_backbone:
     for layer in model.layers[:-1]:
@@ -43,88 +53,54 @@ def build_classifier(batch_size, num_frames, resolution, backbone, num_classes, 
 
 # with strategy.scope():
 
-backbone = movinet.Movinet(model_id=model_id)
-# for layer in backbone.layers[:-3]:
-#       layer.trainable = False
+def compile(model, len_train, batch_size, epochs, optimizer, learning_rate=0.01, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0):
 
-# Set num_classes=600 to load the pre-trained weights from the original model
-model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=600)
-model.build([None, None, None, None, 3])
+  loss_obj = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
-# Load pre-trained weights
+  if optimizer == 'adam':
+    optimizer = tf.keras.optimizers.Adam(learning_rate = learning_rate)
+  elif optimizer == 'rmsprop':
+    train_steps = len_train // batch_size
+    total_train_steps = train_steps * epochs
+    initial_learning_rate = learning_rate
+    learning_rate = keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
+    optimizer = keras.optimizers.RMSprop(learning_rate, rho=rho, momentum=momentum, epsilon=epsilon, clipnorm=clipnorm)
 
-checkpoint_dir = f'Models/MoViNet/data/movinet_{model_id}_base'
-checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
-checkpoint = tf.train.Checkpoint(model=model)
-status = checkpoint.restore(checkpoint_path)
-status.assert_existing_objects_matched()
+  model.compile(loss=loss_obj, optimizer=optimizer, metrics=['accuracy'])
 
-build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation, freeze_backbone=False)
 
-loss_obj = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+def train(model, train_ds, val_ds, epochs):
+  print("Training a movinet model...")
+  print(model.summary())
 
-  # optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
-  # train_steps = len(train_videos) // batch_size
-  # total_train_steps = train_steps * epochs
-  # initial_learning_rate = 0.01
-  # learning_rate = keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
-  # optimizer = keras.optimizers.RMSprop(learning_rate, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0)
+  results = model.fit(train_ds, validation_data=val_ds, epochs=epochs, verbose=2)
+  return results
 
-model.compile(loss=loss_obj, optimizer='rmsprop', metrics=['accuracy'])
+# def evaluate(model, test_ds):
+#    print("Evaluate a movinet Mode...")
+#    loss, acc = model.evaluate(test_ds, verbose=2)
+#    print("Model, accuracy: {:5.2f}%".format(100 * acc))
+#    return loss, acc
 
-def plot_history(history, name):
-  """
-    Plotting training and validation learning curves.
+# def get_actual_predicted_labels(model, dataset):
+#   """
+#     Create a list of actual ground truth values and the predictions from the model.
 
-    Args:
-      history: model history with all the metric measures
-  """
-  fig, (ax1, ax2) = plt.subplots(2)
+#     Args:
+#       dataset: An iterable data structure, such as a TensorFlow Dataset, with features and labels.
 
-  fig.set_size_inches(18.5, 10.5)
+#     Return:
+#       Ground truth and predicted values for a particular dataset.
+#   """
+#   actual = [labels for _, labels in dataset.unbatch()]
+#   predicted = model.predict(dataset)
 
-  # Plot loss
-  ax1.set_title('Loss')
-  ax1.plot(history.history['loss'], label = 'train')
-  ax1.plot(history.history['val_loss'], label = 'test')
-  ax1.set_ylabel('Loss')
+#   actual = tf.stack(actual, axis=0)
+#   predicted = tf.concat(predicted, axis=0)
+#   predicted = tf.argmax(predicted, axis=1)
 
-  # Determine upper bound of y-axis
-  max_loss = max(history.history['loss'] + history.history['val_loss'])
+#   return actual, predicted
 
-  ax1.set_ylim([0, np.ceil(max_loss)])
-  ax1.set_xlabel('Epoch')
-  ax1.legend(['Train', 'Validation']) 
-
-  # Plot accuracy
-  ax2.set_title('Accuracy')
-  ax2.plot(history.history['accuracy'],  label = 'train')
-  ax2.plot(history.history['val_accuracy'], label = 'test')
-  ax2.set_ylabel('Accuracy')
-  ax2.set_ylim([0, 1])
-  ax2.set_xlabel('Epoch')
-  ax2.legend(['Train', 'Validation'])
-
-  plt.savefig(f'Models/MoViNet/data/results/{name}.png')
-
-def train(train_ds, val_ds, epochs, name, train_videos):
-    print("Training a movinet model...")
-    # model = build_classifier(batch_size, num_frames, resolution, backbone, num_classes, activation)
-
-    # loss_obj = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-
-    # # optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
-    # # train_steps = len(train_videos) // batch_size
-    # # total_train_steps = train_steps * epochs
-    # # initial_learning_rate = 0.01
-    # # learning_rate = keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
-    # # optimizer = keras.optimizers.RMSprop(learning_rate, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0)
-
-    # model.compile(loss=loss_obj, optimizer='rmsprop', metrics=['accuracy'])
-
-    results = model.fit(train_ds, validation_data=val_ds, epochs=epochs, verbose=2)
-
-    plot_history(results, name)
 
 
 

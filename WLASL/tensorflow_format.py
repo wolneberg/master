@@ -4,8 +4,9 @@ import tensorflow as tf
 import random
 import cv2
 import os
-
-
+"""
+https://www.tensorflow.org/tutorials/load_data/video#create_frames_from_each_video_file
+"""
 def format_frames(frame, output_size):
     """
         Pad and resize an image from a video.
@@ -20,9 +21,7 @@ def format_frames(frame, output_size):
     frame = tf.image.convert_image_dtype(frame, tf.float32)
     frame = tf.image.resize_with_pad(frame, *output_size)
     return frame
-"""
-https://www.tensorflow.org/tutorials/load_data/video#create_frames_from_each_video_file
-"""
+
 def frames_from_video_file(video_path, n_frames, output_size = (172,172), frame_step = 15):
     """
     Creates frames from each video file present for each category.
@@ -70,14 +69,9 @@ def frames_from_video_file(video_path, n_frames, output_size = (172,172), frame_
 
 def create_frames_from_each_video_file(video_id, num_frames, resolution, frame_step):
     if os.path.isfile(f'WLASL/videos/{video_id}.mp4'):
-        frames = frames_from_video_file(f'WLASL/videos/{video_id}.mp4', num_frames, output_size=(resolution, resolution), frame_step=frame_step)
+        frames = frames_from_video_file(f'WLASL/videos/{video_id}.mp4', num_frames, resolution, frame_step)
         return frames
     return []
-
-    # if video_id not in missing:
-    #     frames = frames_from_video_file(f'WLASL/videos/{video_id}.mp4', 64)
-    #     return frames
-    # return []
 
 def get_less_glosses(train_set):
     grouped = train_set.groupby(['gloss']).count()
@@ -86,7 +80,11 @@ def get_less_glosses(train_set):
     return gloss_list
 
 def get_frame_set(video_list, gloss_set, num_frames, resolution, frame_step):
-    frame_list = list(filter(lambda x: len(x[1])>0, list(map(lambda video_id: [f'{video_id:05}', create_frames_from_each_video_file(f'{video_id:05}', num_frames=num_frames, resolution=resolution, frame_step=frame_step)],video_list))))
+    frame_list = list(
+        filter(lambda x: len(x[1])>0, 
+               list(map(lambda video_id: [f'{video_id:05}', 
+                                          create_frames_from_each_video_file(f'{video_id:05}', num_frames, resolution, frame_step)]
+                                          ,video_list))))
     frame_set = pd.DataFrame(frame_list, columns=['video_id', 'frames'])
     frame_set = frame_set.merge(gloss_set, on='video_id')
     return frame_set
