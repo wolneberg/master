@@ -1,13 +1,12 @@
 #!/bin/sh
-#SBATCH --partition=GPUQ
+#SBATCH --partition=CPUQ
 #SBATCH --account=ie-idi
 #SBATCH --time=01:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=60G            
-#SBATCH --job-name="SLR"
-#SBATCH --output=Models/MoViNet/Output/movinet19.out
-#SBATCH --gres=gpu:1
+#SBATCH --mem=10G            
+#SBATCH --job-name="eval_SLR"
+#SBATCH --output=Models/MoViNet/Output/eval/movinet_eval17.out
 
 
 
@@ -34,15 +33,14 @@ module purge
 module load Python/3.10.4-GCCcore-11.3.0
 # module load  Python/3.11.3-GCCcore-12.3.0
 
-# python -m venv Test1
-source Test1/bin/activate
+# python -m venv Test2
+source Test2/bin/activate
 
 module load cuDNN/8.8.0.121-CUDA-12.0.0
 # module load cuDNN/8.4.1.50-CUDA-11.7.0 
 # module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0
 module load TensorFlow/2.13.0-foss-2023a
 # module load TensorFlow/2.11.0-foss-2022a
-
 
 # source .gpu2/bin/activate
 
@@ -53,18 +51,16 @@ module load TensorFlow/2.13.0-foss-2023a
 # module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0
 # module load cuDNN/8.8.0.121-CUDA-12.0.0
 
-pip install -q -r requirements.txt
+pip install -q -r requirements_e.txt
 pip install -q tf-models-official
-# pip uninstall tf-nightly
-# pip install --upgrade protobuf
-# pip install -q git+https://github.com/tensorflow/docs
+# pip uninstall tf-nightly 
+pip install -q git+https://github.com/tensorflow/docs
 
 echo "movinet med gpu"
-echo "wlasl-100: rmsprop, epochs=30, not freezed backbone, med shuffle av train dataset, over"
 
-python train.py
+python evaluate_MoViNet.py
 
-echo "Finished running train.py"
+echo "Finished running evaluate_MoViNet.py"
 
 deactivate
 # conda deactivate

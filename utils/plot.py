@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-# import seaborn as sns
+import seaborn as sns
 import tensorflow as tf
 
 def plot_history(history, name):
@@ -38,17 +38,17 @@ def plot_history(history, name):
 
   plt.savefig(f'Models/MoViNet/data/results/{name}.png')
 
-# def plot_confusion_matrix(name, actual, predicted, labels, ds_type):
-  # cm = tf.math.confusion_matrix(actual, predicted)
-  # ax = sns.heatmap(cm, annot=True, fmt='g')
-  # sns.set(rc={'figure.figsize':(12, 12)})
-  # sns.set(font_scale=1.4)
-  # ax.set_title('Confusion matrix of action recognition for ' + ds_type)
-  # ax.set_xlabel('Predicted Action')
-  # ax.set_ylabel('Actual Action')
-  # plt.xticks(rotation=90)
-  # plt.yticks(rotation=0)
-  # ax.xaxis.set_ticklabels(labels)
-  # ax.yaxis.set_ticklabels(labels)
+def plot_confusion_matrix(name, actual, predicted, labels, ds_type):
+  cm = tf.math.confusion_matrix(actual, predicted)
+  ax = sns.heatmap(cm, annot=True, fmt='g')
+  sns.set(rc={'figure.figsize':(12, 12)})
+  sns.set(font_scale=1.4)
+  ax.set_title('Confusion matrix of action recognition for ' + ds_type)
+  ax.set_xlabel('Predicted Action')
+  ax.set_ylabel('Actual Action')
+  plt.xticks(rotation=90)
+  plt.yticks(rotation=0)
+  ax.xaxis.set_ticklabels(labels)
+  ax.yaxis.set_ticklabels(labels)
 
-  # plt.savefig(f'Models/MoViNet/data/results/{name}.png')
+  plt.savefig(f'Models/MoViNet/data/results/{name}.png')
