@@ -11,3 +11,5 @@ Models/MoViNet/data
 Models/S3D/video_classification
 Models/S3D/src
 Models/S3D/results
+Models/S3D/s3d_outputs
+WLASL/gifs

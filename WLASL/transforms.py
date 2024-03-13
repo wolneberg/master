@@ -8,8 +8,74 @@ import cv2
 
 # from https://github.com/YuxinZhaozyx/pytorch-VideoDataset/blob/master/transforms.py 
 
-__all__ = ['VideoFilePathToTensor', 'VideoResize', 'VideoRandomCrop', 'VideoCenterCrop', 'VideoRandomHorizontalFlip', 
+__all__ = ['FramesFromVideoPath','VideoFilePathToTensor', 'VideoResize', 'VideoRandomCrop', 'VideoCenterCrop', 'VideoRandomHorizontalFlip', 
             'VideoRandomVerticalFlip', 'VideoGrayscale']
+
+class FramesFromVideoPath(object):
+    '''
+        Prøvde å lage lignende som for tensorflow koden vår, men funka dårlig
+    '''
+
+    def __init__(self, num_frames, output_size=(256,256), frame_step=5, max_length=100):
+        self.num_frames = num_frames
+        self.output_size = output_size
+        self.frame_step = frame_step
+        self.max_length = max_length
+        self.channels = 3
+
+    def __call__(self, path):
+        # open video file
+        cap = cv2.VideoCapture(str(path))
+        assert(cap.isOpened())
+        video_length = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+
+        # init empty output frames (C x L x H x W)
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+
+        need_length = 1 + (self.num_frames - 1) * self.frame_step
+    
+        if need_length > video_length:
+            start = 0
+        else:
+            max_start = video_length - need_length
+            start = random.randint(0, self.max_length)
+
+        frames = torch.FloatTensor(self.channels, self.max_length+1, height, width)
+
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start)
+        # ret is a boolean indicating whether read was successful, frame is the image itself
+        ret, frame = cap.read()
+        # successfully read frame
+        # BGR to RGB
+        if ret:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
+            frame = torch.from_numpy(frame)
+            # (H x W x C) to (C x H x W)
+            frame = frame.permute(2, 0, 1)
+            frames[:, start, :, :] = frame.float()
+        else:
+            frames[:, start:, :, :] = 0
+        for _ in range(self.num_frames-1):
+            for _ in range(self.frame_step):
+                # read frame
+                ret, frame = cap.read()
+            if ret:
+                # successfully read frame
+                # BGR to RGB
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
+                frame = torch.from_numpy(frame)
+                # (H x W x C) to (C x H x W)
+                frame = frame.permute(2, 0, 1)
+                frames[:, _, :, :] = frame.float()
+            else:
+                # reach the end of the video
+                # fill the rest frames with 0.0
+                frames[:, _:, :, :] = 0
+
+        frames /= 255
+        cap.release()
+        return frames
 
 class VideoFilePathToTensor(object):
     """ load video at given file path to torch.Tensor (C x L x H x W, C = 3) 
@@ -50,6 +116,7 @@ class VideoFilePathToTensor(object):
         sample_factor = 1
         if self.fps:
             old_fps = cap.get(cv2.CAP_PROP_FPS)  # fps of video
+            print(old_fps)
             sample_factor = int(old_fps / self.fps)
             assert(sample_factor >= 1)
         
