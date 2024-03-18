@@ -17,9 +17,8 @@ glosses = get_glosses()
 test_set = get_frame_set(test_videos, glosses, frames, resolution, frame_step)
 
 test_dataset = format_dataset(test_set, glosses, over=False)
-formatted = tf.data.Dataset.from_tensor_slices((test_dataset['frames'].tolist()))
 
-# test_dataset = test_set.batch(1)
+test_dataset = test_dataset.batch(1)
 
 
 # new_model = tf.keras.models.load_model('movinet_freez10_3.keras')
@@ -38,8 +37,8 @@ model = tf.saved_model.load('Models/MoViNet/models/movinet_freez10_3')
 
 # model.evaluate(test_dataset)
 # prediction = model(test_set.iloc[1]['frames'])
-prediction = model(formatted)
-print(prediction)
+# prediction = model(test_dataset.take(1))
+# print(prediction)
 # def serving(test):
 #   return model(test)
 # print(serving(test_dataset)[:10])
@@ -55,13 +54,13 @@ print(prediction)
 
 # model1.summary()
 
-try:
+# try:
   # Convert the model
-  converter = tf.lite.TFLiteConverter.from_saved_model('Models/MoViNet/models/movinet_freez10_3') # path to the SavedModel directory
-  tflite_model = converter.convert()
+converter = tf.lite.TFLiteConverter.from_saved_model('Models/MoViNet/models/movinet_freez10_3') # path to the SavedModel directory
+tflite_model = converter.convert()
 
   # Save the model.
-  with open('model.tflite', 'wb') as f:
-    f.write(tflite_model)
-except:
-  print('Was not able to save lite version from saved models')
+with open('model.tflite', 'wb') as f:
+  f.write(tflite_model)
+# except:
+  # print('Was not able to save lite version from saved models')
