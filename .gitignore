@@ -2,12 +2,9 @@ WLASL/videos
 WLASL/data
 **/__pycache__/
 .DS_Store
-.venv
 *.out
 Models/MoViNet/data
-.gpu
-.s3d
-.gpu2
 Models/S3D/video_classification
 Models/S3D/src
 Models/S3D/results
+env*
