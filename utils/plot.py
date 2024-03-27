@@ -3,7 +3,7 @@ import numpy as np
 import seaborn as sns
 import tensorflow as tf
 
-def plot_history(history, name):
+def plot_history(history, name, model_id):
   """
     Plotting training and validation learning curves.
 
@@ -36,14 +36,14 @@ def plot_history(history, name):
   ax2.set_xlabel('Epoch')
   ax2.legend(['Train', 'Validation'])
 
-  plt.savefig(f'Models/MoViNet/data/results/{name}.png')
+  plt.savefig(f'Models/MoViNet/data/results/{model_id}/{name}.png')
 
-def plot_confusion_matrix(name, actual, predicted, labels, ds_type):
+def plot_confusion_matrix(name, model_id, actual, predicted, labels):
   cm = tf.math.confusion_matrix(actual, predicted)
   ax = sns.heatmap(cm, annot=True, fmt='g')
   sns.set(rc={'figure.figsize':(12, 12)})
   sns.set(font_scale=1.4)
-  ax.set_title('Confusion matrix of action recognition for ' + ds_type)
+  ax.set_title('Confusion matrix of action recognition for ' + name)
   ax.set_xlabel('Predicted Action')
   ax.set_ylabel('Actual Action')
   plt.xticks(rotation=90)
@@ -51,4 +51,4 @@ def plot_confusion_matrix(name, actual, predicted, labels, ds_type):
   ax.xaxis.set_ticklabels(labels)
   ax.yaxis.set_ticklabels(labels)
 
-  plt.savefig(f'Models/MoViNet/data/results/{name}.png')
+  plt.savefig(f'Models/MoViNet/data/{model_id}/confusion/{name}.png')
