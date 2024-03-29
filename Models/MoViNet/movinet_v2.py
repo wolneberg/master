@@ -5,7 +5,6 @@ from official.projects.movinet.modeling import movinet_model
 
 try:
   print("Physical devices: ",tf.config.list_physical_devices('GPU'))
-  strategy = tf.distribute.MirroredStrategy()
   print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 except:
   print('gikk ikke å printe')
@@ -14,7 +13,6 @@ except:
 def build_classifier(model_id, batch_size, num_frames, resolution, num_classes, unFreez, activation, freeze_backbone=False):
   """Builds a classifier on top of a backbone model."""
   # tf.keras.backend.clear_session()
-  # tf.keras.backend.clear_session()
   
   backbone = movinet.Movinet(model_id=model_id[:2])
   backbone.trainable = True
@@ -22,28 +20,24 @@ def build_classifier(model_id, batch_size, num_frames, resolution, num_classes, 
         layer.trainable = False
 
   # Set num_classes=600 to load the pre-trained weights from the original model
-  model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=100)
-  # model.build([None, None, None, None, 3])
+  model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=600)
+  model.build([None, None, None, None, 3])
 
-  # # Load pre-trained weights
-  # checkpoint_dir = f'Models/MoViNet/data/movinet_{model_id}'
-  # checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
-  # checkpoint = tf.train.Checkpoint(model=model)
-  # status = checkpoint.restore(checkpoint_path)
-  # status.assert_existing_objects_matched()
+  # Load pre-trained weights
+  checkpoint_dir = f'Models/MoViNet/data/movinet_{model_id}'
+  checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
+  checkpoint = tf.train.Checkpoint(model=model)
+  status = checkpoint.restore(checkpoint_path)
+  status.assert_existing_objects_matched()
 
-  # model = movinet_model.MovinetClassifier(
-  #     backbone=backbone,
-  #     num_classes=num_classes, activation=activation)
+  x = model.layers[-1].output
+  # print(x)
+  output = tf.keras.layers.Dense(units=num_classes, activation=activation)(x)
+  for element in model.inputs:
+     print(element)
+     break
 
-  # x = model.layers[-1].output
-  # # print(x)
-  # output = tf.keras.layers.Dense(units=num_classes, activation=activation)(x)
-  # for element in model.inputs:
-  #    print(element)
-  #    break
-
-  # model = tf.keras.Model(inputs=model.inputs, outputs=output)
+  model = tf.keras.Model(inputs=model.inputs, outputs=output)
   model.build([batch_size, num_frames, resolution, resolution, 3])
   if freeze_backbone:
     for layer in model.layers[:-1]:
@@ -51,22 +45,23 @@ def build_classifier(model_id, batch_size, num_frames, resolution, num_classes, 
     model.layers[-1].trainable = True
   return model
 
-# with strategy.scope():
+
 
 def compile(model, len_train, batch_size, epochs, optimizer, learning_rate=0.01, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0):
 
   loss_obj = tf.keras.losses.SparseCategoricalCrossentropy()
 
-  # if optimizer == 'adam':
-  #   optimizer = tf.keras.optimizers.Adam(learning_rate = learning_rate)
-  # elif optimizer == 'rmsprop':
-  #   train_steps = len_train // batch_size
-  #   total_train_steps = train_steps * epochs
-  #   initial_learning_rate = learning_rate
-  #   learning_rate = tf.keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
-  #   optimizer = tf.keras.optimizers.RMSprop(learning_rate, rho=rho, momentum=momentum, epsilon=epsilon, clipnorm=clipnorm)
+  if optimizer == 'adam':
+    optimizer = tf.keras.optimizers.Adam(learning_rate = learning_rate)
+  elif optimizer == 'rmsprop':
+    train_steps = len_train // batch_size
+    total_train_steps = train_steps * epochs
+    initial_learning_rate = learning_rate
+    learning_rate = tf.keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps,)
+    optimizer = tf.keras.optimizers.RMSprop(learning_rate, rho=rho, momentum=momentum, epsilon=epsilon, clipnorm=clipnorm)
 
-  model.compile(loss=loss_obj, optimizer="rmsprop", metrics=['accuracy'])
+  model.compile(loss=loss_obj, optimizer=optimizer, metrics=['accuracy'])
+
 
 
 def train(model, train_ds, val_ds, epochs):

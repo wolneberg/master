@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH --partition=GPUQ
 #SBATCH --account=ie-idi
-#SBATCH --time=02:00:00
+#SBATCH --time=02:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=60G            
@@ -37,8 +37,8 @@ module purge
 module load Python/3.10.4-GCCcore-11.3.0
 # module load Python/3.10.8-GCCcore-12.2.0
 
-python -m venv env2
-source env2/bin/activate
+# python -m venv env2
+# source env2/bin/activate
 
 module load cuDNN/8.8.0.121-CUDA-12.0.0
 # module load cuDNN/8.4.1.50-CUDA-11.7.0 
@@ -49,8 +49,8 @@ module load cuDNN/8.8.0.121-CUDA-12.0.0
 pip install -q -r requirements.txt
 pip install -q tf-models-official==2.14
 
-pip install --upgrade tensorflow==2.14
-pip install --upgrade tensorflow.text==2.14
+pip install -q --upgrade tensorflow==2.14
+pip install -q --upgrade tensorflow.text==2.14
 
 # pip install tensorflow==2.13
 # apt install --allow-change-held-packages libcudnn8=8.8.0.121-1+cuda12.0.0
@@ -66,6 +66,6 @@ python train.py
 
 echo "Finished running train.py"
 
-deactivate
+# deactivate
 
 # python -m tf2onnx.convert --tflite Models/MoViNet/lite/model.tflite --output Models/MoViNet/lite/model.onnx --opset 13

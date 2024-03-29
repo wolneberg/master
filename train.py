@@ -3,24 +3,26 @@ from WLASL.preprocess import format_dataset, get_less_glosses, get_frame_set
 # from Models.V3DCNN.v3dcnn import train
 from Models.MoViNet.movinet_v2 import compile, build_classifier, train
 from utils.plot import plot_history
-import tensorflow as tf
-
+import tensorflow as tf, tf_keras
+import datetime
 
 versions = {'a0': ['a0_base'], 'a2': ['a2_base', 'a2_stream']}
 
+
+
 # output_file_name = args.output_file
-name= 'movinet_a0_1'
+name= f'movinet_a0_{datetime.datetime.now().strftime("%m%d%Y-%H%M%S")}'
 model = 'movinet'
 model_id = versions.get('a0')[0]
 
-batch_size = 32
+batch_size = 4
 num_classes = 100
 frames = 20
 frame_step = 2
 resolution = 172
 epochs = 20
 activation = 'softmax'
-num_unfreeze_layers = 10
+num_unfreeze_layers = 4
 
 optimizer = 'rmsprop'
 learning_rate = 0.01
@@ -35,7 +37,7 @@ print(f'{name}, {model}, {model_id}')
 print(f'Classes: {num_classes}, version: {model_id}')
 print(f'epochs: {epochs}')
 print(f'activation function: {activation}')
-print(f' Number of unfreezed layers: {num_unfreeze_layers}')
+print(f'Number of unfreezed layers: {num_unfreeze_layers}')
 print(f'batch size: {batch_size}')
 print(f'Frames: {frames}, frame step: {frame_step}, resolution: {resolution}')
 print(f'Initial learning rate: {learning_rate}, Rho: {rho}, Momentum: {momentum}, Epsilon: {epsilon}, clipnorm: {clipnorm} ')
@@ -87,26 +89,30 @@ print("---------------------")
 print("Saving...")
 print("---------------------")
 
-input_shape_concrete = [1 if s is None else s for s in None]
+input_shape = (batch_size, frames, resolution, resolution, 3)
+input_shape_concrete = [1 if s is None else s for s in input_shape]
+model.build(input_shape_concrete)
+
 _ = model(tf.ones(input_shape_concrete))
-tf.models.save_model(model, f'Models/MoViNet/models/{name}')
+tf.saved_model.save(model, f'Models/MoViNet/models/{name}')
+# tf_keras.models.save_model(model, f'Models/MoViNet/models/{name}')
 
-print("---------------------")
-print("converting")
-print("---------------------")
-tf_model = tf.saved_model.load('Models/MoViNet/models/movinet_freez10_3')
-converter = tf.lite.TFLiteConverter.from_keras_model(tf_model)
-converter.target_spec.supported_ops = [
-  tf.lite.OpsSet.TFLITE_BUILTINS,
-  tf.lite.OpsSet.SELECT_TF_OPS
-]
-tflite_model = converter.convert()
-open('Models/MoViNet/lite/model.tflite', 'wb').write(tflite_model)
+# print("---------------------")
+# print("converting")
+# print("---------------------")
 
-# Convert the model
-converter = tf.lite.TFLiteConverter.from_saved_model(f"Models/MoViNet/models/{name}") # path to the SavedModel directory
-tflite_model = converter.convert()
+# converter = tf.lite.TFLiteConverter.from_keras_model(tf_model)
+# tflite_model = converter.convert()
+# open('Models/MoViNet/lite/model.tflite', 'wb').write(tflite_model)
 
-# Save the model.
-with open('Models/MoViNet/lite/saved_model_format.tflite', 'wb') as f:
-  f.write(tflite_model)
+# # Convert the model
+# converter = tf.lite.TFLiteConverter.from_saved_model(f"Models/MoViNet/models/{name}") # path to the SavedModel directory
+# converter.target_spec.supported_ops = [
+#   tf.lite.OpsSet.TFLITE_BUILTINS,
+#   tf.lite.OpsSet.SELECT_TF_OPS
+# ]
+# tflite_model = converter.convert()
+
+# # Save the model.
+# with open('Models/MoViNet/lite/saved_model_format.tflite', 'wb') as f:
+#   f.write(tflite_model)
