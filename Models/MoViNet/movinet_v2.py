@@ -5,7 +5,6 @@ from official.projects.movinet.modeling import movinet_model
 
 try:
   print("Physical devices: ",tf.config.list_physical_devices('GPU'))
-  print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 except:
   print('gikk ikke å printe')
 
