@@ -17,7 +17,7 @@
 
 #--gres=gpu:1
 
-# -J "movinet-$(date +%Y%m%d-%H%M%S)"
+# -J "movinet-$(date +%d%m%Y-%H%M%S)"
 
 echo "We are running from this directory: $SLURM_SUBMIT_DIR"
 echo "The name of the job is: $SLURM_JOB_NAME"
