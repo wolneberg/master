@@ -33,3 +33,13 @@ def get_glosses():
     glosses = gloss_set.merge(glosses, on='gloss')
     #glosses = glosses.drop('gloss', axis=1)
     return glosses
+
+def all_glosses():
+    with open('WLASL/data/wlasl_class_list.txt', 'r') as file:
+        lines = file.readlines()
+
+    glosses = []
+    for line in lines:
+        _, word = line.strip().split('\t')
+        glosses.append(word)
+    return glosses

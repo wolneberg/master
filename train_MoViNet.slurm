@@ -6,8 +6,9 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=60G            
 #SBATCH --job-name="SLR"
-#SBATCH --output=Models/MoViNet/Output/movinet19.out
+#SBATCH --output=Models/MoViNet/Output/%x.out
 #SBATCH --gres=gpu:1
+#SBATCH --constraint=gpu32g
 
 
 
@@ -27,44 +28,47 @@ echo "We are using $SLURM_CPUS_ON_NODE cores"
 echo "We are using $SLURM_CPUS_ON_NODE cores per node"
 echo "Total of $SLURM_NTASKS cores"
 
+
 echo "--- nvidia-smi ---"
 nvidia-smi
 
 module purge
+module list
 module load Python/3.10.4-GCCcore-11.3.0
-# module load  Python/3.11.3-GCCcore-12.3.0
+# # module load  Python/3.11.3-GCCcore-12.3.0
+# # module load Clang/16.0.6-GCCcore-12.3.0 
 
-# python -m venv Test1
-source Test1/bin/activate
+# python -m venv venv/Test9
+source venv/Test9/bin/activate
+# # pip uninstall keras
+# # pip install 
 
 module load cuDNN/8.8.0.121-CUDA-12.0.0
-# module load cuDNN/8.4.1.50-CUDA-11.7.0 
-# module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0
-module load TensorFlow/2.13.0-foss-2023a
-# module load TensorFlow/2.11.0-foss-2022a
-
-
-# source .gpu2/bin/activate
-
-# module load Anaconda3/2023.09-0
-# conda create --name .idun
-# conda activate .idun
-
-# module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0
-# module load cuDNN/8.8.0.121-CUDA-12.0.0
 
 pip install -q -r requirements.txt
-pip install -q tf-models-official
+echo "install tf-modles-official" 
+pip install -q tf-models-official==2.14
+# pip install --upgrade protobuf
+pip show tf-models-official
+module list
+# pip show tensorflow
+pip install -q --upgrade tensorflow==2.14
+pip show tensorflow
+# pip show tensorflow-text
+pip install -q --upgrade tensorflow.text==2.14
+pip show tensorflow-text
 # pip uninstall tf-nightly
 # pip install --upgrade protobuf
-# pip install -q git+https://github.com/tensorflow/docs
+pip install -q git+https://github.com/tensorflow/docs
+# pip install git+https://github.com/okankop/vidaug
 
 echo "movinet med gpu"
 echo "wlasl-100: rmsprop, epochs=30, not freezed backbone, med shuffle av train dataset, over"
+# python -v
+echo 'batch: 4, learning rate, 0.01, dropout: 0.3'
+python train_movinet.py -b 4 -l 0.01 -d 0 -v 'a0' -s 1 -e 2
 
-python train.py
-
-echo "Finished running train.py"
+echo "Finished running train_movinet.py"
 
 deactivate
 # conda deactivate

@@ -64,7 +64,7 @@ def frames_from_video_file(video_path, n_frames, output_size = (172,172), frame_
         else:
             result.append(np.zeros_like(result[0]))
     src.release()
-    result = np.array(result)[..., [2, 1, 0]]
+    result = np.array(result, 'float32')[..., [2, 1, 0]]
     return result
 
 
