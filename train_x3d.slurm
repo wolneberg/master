@@ -1,20 +1,18 @@
 #!/bin/sh
 #SBATCH --partition=GPUQ
 #SBATCH --account=ie-idi
-#SBATCH --time=14:30:00
+#SBATCH --time=10:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=60G  
 #SBATCH --job-name="SLR"
 #SBATCH --output=Models/x3d/Output/%x.out
 #SBATCH --gres=gpu:1
-#SBATCH --constraint=gpu32g
-
-
+# --constraint=gpu32g
 
 #SBATCH --mail-type=end
 #SBATCH --mail-type=fail
-#SBATCH --mail-user=helenaml@stud.ntnu.no
+#SBATCH --mail-user=ingrimwo@stud.ntnu.no
 
 #mem: total memory per node
 #mem-per-cpu: memory per cpu-core
@@ -46,5 +44,5 @@ python train_x3d.py -n movinet1
 
 echo "Finished running train.py"
 
-deactivate
+# deactivate
 # conda deactivate

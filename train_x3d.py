@@ -18,7 +18,8 @@ from torchvision.transforms._transforms_video import (
     CenterCropVideo,
     NormalizeVideo,
 )
-
+import imageio
+import numpy as np
 
 def main():
     torch.manual_seed(123)
@@ -31,7 +32,7 @@ def main():
     num_epochs = 50
     batch_size = 8
     model_name = 'x3d_xs'
-    name = f'{model_name}-{datetime.datetime.now().strftime("%m%d%Y-%H%M%S")}'
+    name = f'{model_name}-{datetime.datetime.now().strftime("%d%m%Y-%H%M%S")}'
 
     print("-----------------------------------------")
     print("-----------------------------------------")
@@ -112,12 +113,29 @@ def main():
     # train_dataset = WLASLDataset(train_dataset, transform=transform)
     # val_dataset = WLASLDataset(val_dataset, transform=transform)
     train_dataset = WLASLDataset(train_dataset, transform=torchvision.transforms.Compose([
-                WLASL.transforms.VideoFilePathToTensor(max_len=4, fps=12, padding_mode='last'),
-                WLASL.transforms.VideoResize([182, 182])]))
+                WLASL.transforms.VideoFilePathToTensor(max_len=50, fps=12, padding_mode='last'),
+                        UniformTemporalSubsample(transform_params["num_frames"]),
+                Lambda(lambda x: x/255.0),
+                NormalizeVideo(mean, std),
+                ShortSideScale(size=transform_params["side_size"]),
+                CenterCropVideo(
+                    crop_size=(transform_params["crop_size"], transform_params["crop_size"])
+                )]))
     val_dataset = WLASLDataset(val_dataset, transform=torchvision.transforms.Compose([
-        WLASL.transforms.VideoFilePathToTensor(max_len=4, fps=12,padding_mode='last'), 
-        WLASL.transforms.VideoResize([256,256])]))
+                WLASL.transforms.VideoFilePathToTensor(max_len=50, fps=12, padding_mode='last'),
+                        UniformTemporalSubsample(transform_params["num_frames"]),
+                Lambda(lambda x: x/255.0),
+                NormalizeVideo(mean, std),
+                ShortSideScale(size=transform_params["side_size"]),
+                CenterCropVideo(
+                    crop_size=(transform_params["crop_size"], transform_params["crop_size"])
+                )]))
 
+    # def to_gif(images, label):
+    #     converted_images = np.clip(images * 255, 0, 255).numpy().astype(np.uint8)
+    #     imageio.mimsave(f'./{label}.gif', converted_images, format='GIF', fps=12)
+    
+    # to_gif(train_dataset[132][0][0], train_dataset[132][1])
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
