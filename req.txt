@@ -1,7 +1,10 @@
 torch
 torchvision
+pytorchvideo
 pandas
 matplotlib
 opencv-python
 pillow
 tqdm
+onnx
+onnxscript
