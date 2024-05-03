@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 from torchvision import models
 from torch.utils.data.dataloader import default_collate
 import torch.optim as optim
+import logging
 
 def train_one_epoch(model, trainloader, optimizer, criterion, device):
     # det er også en metode innebygd for dette I think...
@@ -107,7 +108,7 @@ def train(device, model, num_epochs, train_loader, valid_loader, name, model_nam
     train_acc, valid_acc = [], []
     
     for epoch in range(num_epochs):
-        print(f"[INFO]: Epoch {epoch+1} of {num_epochs}")
+        logging.info(f"[INFO]: Epoch {epoch+1} of {num_epochs}")
         train_epoch_loss, train_epoch_acc = train_one_epoch(
             model, train_loader, optimizer, criterion, device
         )
@@ -118,8 +119,8 @@ def train(device, model, num_epochs, train_loader, valid_loader, name, model_nam
         valid_loss.append(valid_epoch_loss)
         train_acc.append(train_epoch_acc)
         valid_acc.append(valid_epoch_acc)
-        print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_epoch_acc:.3f}")
-        print(f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
+        logging.info(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_epoch_acc:.3f}")
+        logging.info(f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
 
     plot_results(train_loss, valid_loss, train_acc, valid_acc, name)
     input = torch.randn(1, 3, 20, 256, 256)

@@ -1,12 +1,14 @@
 #!/bin/sh
-#SBATCH --partition=CPUQ
-#SBATCH --account=ie-idi
-#SBATCH --time=1-05:00:00
+#SBATCH --partition=GPUQ
+#SBATCH --account=share-ie-idi
+#SBATCH --time=03:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=40G            
-#SBATCH --job-name="movinet"
-#SBATCH --output=adam_find_lr.out
+#SBATCH --mem=60G            
+#SBATCH --job-name="SLR"
+#SBATCH --output=MSASL/output/%x.out
+#SBATCH --gres=gpu:1
+# --constraint=gpu32g
 
 #SBATCH --mail-type=end
 #SBATCH --mail-type=fail
@@ -24,19 +26,17 @@ echo "We are using $SLURM_CPUS_ON_NODE cores"
 echo "We are using $SLURM_CPUS_ON_NODE cores per node"
 echo "Total of $SLURM_NTASKS cores"
 
+echo "--- nvidia-smi ---"
+nvidia-smi
+
 module purge
-module load Python/3.11.5-GCCcore-13.2.0
+module load Python/3.10.4-GCCcore-11.3.0
+module load cuDNN/8.8.0.121-CUDA-12.0.0
 
-python3 -m venv .venv
-source .venv/bin/activate
+pip install -q -r requirements.txt
+pip install -q tf-models-official==2.14
+pip install -q --upgrade tensorflow==2.14
+pip install -q --upgrade tensorflow.text==2.14
+pip install -q git+https://github.com/tensorflow/docs
 
-pip3 install -q -r requirements.txt
-pip3 install -q tf-models-official
-
-echo "finding lrs for different number of frozen layers, epochs 20, adam"
-
-python3 Models/MoViNet/movinet.py
-
-echo "Finished running movient.py"
-
-deactivate
+python3 train_msasl.py

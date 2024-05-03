@@ -18,7 +18,7 @@ Models/MoViNet/hyperparameter
 Models/S3D/video_classification
 Models/S3D/src
 Models/S3D/results
-.gifs
+*.gif
 gifs
 Test1
 Models/x3d/model
@@ -26,5 +26,8 @@ Models/x3d/results
 Models/V3DCNN/models
 Models/V3DCNN/checkpoints
 Models/V3DCNN/results
-
-
+MSASL/data
+MSASL/raw_videos
+MSASL/videos
+MSASL/raw2
+*.log

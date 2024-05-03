@@ -1,14 +1,12 @@
 #!/bin/sh
-#SBATCH --partition=GPUQ
+#SBATCH --partition=CPUQ
 #SBATCH --account=share-ie-idi
-#SBATCH --time=20:30:00
+#SBATCH --time=05:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=60G  
+#SBATCH --mem=10G  
 #SBATCH --job-name="SLR"
-#SBATCH --output=Models/x3d/Output/%x.out
-#SBATCH --gres=gpu:1
-# --constraint=gpu32g
+#SBATCH --output=MSASL/%x.out
 
 #SBATCH --mail-type=end
 #SBATCH --mail-type=fail
@@ -26,29 +24,11 @@ echo "We are using $SLURM_CPUS_ON_NODE cores"
 echo "We are using $SLURM_CPUS_ON_NODE cores per node"
 echo "Total of $SLURM_NTASKS cores"
 
-echo "--- nvidia-smi ---"
-nvidia-smi
 
 module purge
-module list
 module load Python/3.10.4-GCCcore-11.3.0
-# python -m venv .x3d
-# source .x3d/bin/activate
-# # module load  Python/3.11.3-GCCcore-12.3.0
-# # module load Clang/16.0.6-GCCcore-12.3.0 
 
+pip install -q moviepy
+pip install -q pytube
 
-pip install -q -r req.txt
-pip install -U git+https://github.com/facebookresearch/fvcore.git
-echo "x3d med gpu"
-# python -v
-
-EPOCHS=15
-BATCH_SIZE=16
-
-python train_x3d.py -e $EPOCHS -b $BATCH_SIZE
-
-echo "Finished running train.py"
-
-# deactivate
-# conda deactivate
+python MSASL/trim.py
