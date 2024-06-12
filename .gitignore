@@ -11,7 +11,9 @@ Models/MoViNet/data
 Models/MoViNet/models
 Models/MoViNet/Output
 Models/MoViNet/checkpoints
+Models/MoViNet/Hyperparameter
 Models/MoViNet/hyperparameter
+
 .gpu
 .s3d
 .gpu2
@@ -26,5 +28,9 @@ Models/x3d/results
 Models/V3DCNN/models
 Models/V3DCNN/checkpoints
 Models/V3DCNN/results
+Models/i3d/data
+Models/i3d/checkpoints
+Models/i3d/hyperparameter
+Models/i3d/models
 
 
