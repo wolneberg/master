@@ -5,43 +5,7 @@ import random
 import cv2
 import os
 
-num_frames = 16
 
-# # Preprocessing of WLASL
-# def get_video_subset(wlasl_samples, subset):
-#     videos = pd.read_json(f'WLASL/data/{wlasl_samples}.json').transpose()
-#     train_videos = videos[videos['subset'].str.contains(subset)].index.values.tolist()
-#     return train_videos
-
-# def get_missing_videos():
-#     f = open('WLASL/data/missing.txt', 'r')
-#     missing = []
-#     for line in f:
-#         missing.append(line.strip())
-#     f.close()
-#     return missing
-
-# def get_glosses():
-#     glosses = pd.read_json('WLASL/data/WLASL_v0.3.json')
-#     glosses = glosses.explode('instances').reset_index(drop=True).pipe(
-#         lambda x: pd.concat([x, pd.json_normalize(x['instances'])], axis=1)).drop(
-#         'instances', axis=1)[['gloss', 'video_id']]
-#     f = open('WLASL/data/wlasl_class_list.txt', 'r')
-#     gloss_set = []
-#     for line in f:
-#         new_line = line.strip().split('\t')
-#         new_line[0] = int(new_line[0])
-#         gloss_set.append(new_line)
-#     f.close()
-#     gloss_set = pd.DataFrame(gloss_set, columns=['gloss_id', 'gloss'])
-#     glosses = gloss_set.merge(glosses, on='gloss')
-#     #glosses = glosses.drop('gloss', axis=1)
-#     return glosses
-
-#Format videos into frames and format dataset
-"""
-https://www.tensorflow.org/tutorials/load_data/video#create_frames_from_each_video_file
-"""
 def format_frames(frame, output_size):
     """
         Pad and resize an image from a video.
@@ -56,7 +20,6 @@ def format_frames(frame, output_size):
     frame = tf.image.convert_image_dtype(frame, tf.float32)
     frame = tf.image.resize_with_pad(frame, *output_size)
     return frame
-
 """
 https://www.tensorflow.org/tutorials/load_data/video#create_frames_from_each_video_file
 """
@@ -101,13 +64,13 @@ def frames_from_video_file(video_path, n_frames, output_size = (172,172), frame_
         else:
             result.append(np.zeros_like(result[0]))
     src.release()
-    result = np.array(result)[..., [2, 1, 0]]
+    result = np.array(result, 'float32')[..., [2, 1, 0]]
     return result
 
 
-def create_frames_from_each_video_file(video_id):
+def create_frames_from_each_video_file(video_id, num_frames, resolution, frame_step):
     if os.path.isfile(f'WLASL/videos/{video_id}.mp4'):
-        frames = frames_from_video_file(f'WLASL/videos/{video_id}.mp4', num_frames)
+        frames = frames_from_video_file(f'WLASL/videos/{video_id}.mp4', num_frames, output_size=(resolution, resolution), frame_step=frame_step)
         return frames
     return []
 
@@ -122,8 +85,8 @@ def get_less_glosses(train_set):
     gloss_list = filtered.index.values.tolist()
     return gloss_list
 
-def get_frame_set(video_list, gloss_set):
-    frame_list = list(filter(lambda x: len(x[1])>0, list(map(lambda video_id: [f'{video_id:05}', create_frames_from_each_video_file(f'{video_id:05}')],video_list))))
+def get_frame_set(video_list, gloss_set, num_frames, resolution, frame_step):
+    frame_list = list(filter(lambda x: len(x[1])>0, list(map(lambda video_id: [f'{video_id:05}', create_frames_from_each_video_file(f'{video_id:05}', num_frames=num_frames, resolution=resolution, frame_step=frame_step)],video_list))))
     frame_set = pd.DataFrame(frame_list, columns=['video_id', 'frames'])
     frame_set = frame_set.merge(gloss_set, on='video_id')
     return frame_set

@@ -3,7 +3,10 @@ import pandas as pd
 # Preprocessing of WLASL
 def get_video_subset(wlasl_samples, subset):
     videos = pd.read_json(f'WLASL/data/{wlasl_samples}.json').transpose()
-    train_videos = videos[videos['subset'].str.contains(subset)].index.values.tolist()
+    if (subset == 'all'):
+        train_videos =videos.index.values.tolist()
+    else:
+        train_videos = videos[videos['subset'].str.contains(subset)].index.values.tolist()
     return train_videos
 
 def get_missing_videos():
@@ -29,4 +32,14 @@ def get_glosses():
     gloss_set = pd.DataFrame(gloss_set, columns=['gloss_id', 'gloss'])
     glosses = gloss_set.merge(glosses, on='gloss')
     #glosses = glosses.drop('gloss', axis=1)
+    return glosses
+
+def all_glosses():
+    with open('WLASL/data/wlasl_class_list.txt', 'r') as file:
+        lines = file.readlines()
+
+    glosses = []
+    for line in lines:
+        _, word = line.strip().split('\t')
+        glosses.append(word)
     return glosses

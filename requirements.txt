@@ -1,5 +1,9 @@
 mediapy
-tensorflow
 opencv-python
+imageio
 matplotlib
 einops
+pyyaml
+h5py
+seaborn
+pandas
