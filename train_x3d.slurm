@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH --partition=GPUQ
-#SBATCH --account=ie-idi
+#SBATCH --account=share-ie-idi
 #SBATCH --time=14:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -8,13 +8,8 @@
 #SBATCH --job-name="SLR"
 #SBATCH --output=Models/x3d/Output/%x.out
 #SBATCH --gres=gpu:1
-#SBATCH --constraint=gpu32g
+#SBATCH --constraint="gpu32g|gpu40g|gpu80g"
 
-
-
-#SBATCH --mail-type=end
-#SBATCH --mail-type=fail
-#SBATCH --mail-user=helenaml@stud.ntnu.no
 
 #mem: total memory per node
 #mem-per-cpu: memory per cpu-core
@@ -40,11 +35,11 @@ module load Python/3.10.4-GCCcore-11.3.0
 
 pip install -q -r req.txt
 pip install -U git+https://github.com/facebookresearch/fvcore.git
-echo "x3d med gpu"
-# python -v
-python train_x3d.py -n movinet1
+echo "Train X3D med gpu"
 
-echo "Finished running train.py"
+python train_x3d.py
+
+echo "Finished running train_x3d.py"
 
 deactivate
 # conda deactivate

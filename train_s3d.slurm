@@ -1,4 +1,5 @@
 #!/bin/sh
+nvidia-smi
 
 echo "We are running from this directory: $SLURM_SUBMIT_DIR"
 echo "The name of the job is: $SLURM_JOB_NAME"

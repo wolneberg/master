@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH --partition=GPUQ
 #SBATCH --account=share-ie-idi
-#SBATCH --time=10:30:00
+#SBATCH --time=05:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=100G            
@@ -9,13 +9,6 @@
 #SBATCH --output=Models/i3d/Output/%x.out
 #SBATCH --gres=gpu:1
 #SBATCH --constraint="gpu32g|gpu40g|gpu80g"
-
-
-
-
-#SBATCH --mail-type=end
-#SBATCH --mail-type=fail
-#SBATCH --mail-user=helenaml@stud.ntnu.no
 
 #mem: total memory per node
 #mem-per-cpu: memory per cpu-core
