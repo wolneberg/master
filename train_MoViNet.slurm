@@ -1,20 +1,14 @@
 #!/bin/sh
 #SBATCH --partition=GPUQ
-#SBATCH --account=ie-idi
-#SBATCH --time=01:30:00
+#SBATCH --account=share-ie-idi
+#SBATCH --time=03:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=60G            
+#SBATCH --mem=100G            
 #SBATCH --job-name="SLR"
 #SBATCH --output=Models/MoViNet/Output/%x.out
-#SBATCH --gres=gpu:1
-#SBATCH --constraint=gpu32g
-
-
-
-#SBATCH --mail-type=end
-#SBATCH --mail-type=fail
-#SBATCH --mail-user=helenaml@stud.ntnu.no
+#SBATCH --gres=gpu:a100:1
+#SBATCH --constraint="gpu80g"
 
 #mem: total memory per node
 #mem-per-cpu: memory per cpu-core
@@ -35,38 +29,21 @@ nvidia-smi
 module purge
 module list
 module load Python/3.10.4-GCCcore-11.3.0
-# # module load  Python/3.11.3-GCCcore-12.3.0
-# # module load Clang/16.0.6-GCCcore-12.3.0 
 
 # python -m venv venv/Test9
 source venv/Test9/bin/activate
-# # pip uninstall keras
-# # pip install 
+
 
 module load cuDNN/8.8.0.121-CUDA-12.0.0
 
 pip install -q -r requirements.txt
-echo "install tf-modles-official" 
 pip install -q tf-models-official==2.14
-# pip install --upgrade protobuf
-pip show tf-models-official
-module list
-# pip show tensorflow
 pip install -q --upgrade tensorflow==2.14
-pip show tensorflow
-# pip show tensorflow-text
-pip install -q --upgrade tensorflow.text==2.14
-pip show tensorflow-text
-# pip uninstall tf-nightly
-# pip install --upgrade protobuf
 pip install -q git+https://github.com/tensorflow/docs
 # pip install git+https://github.com/okankop/vidaug
+module list
 
-echo "movinet med gpu"
-echo "wlasl-100: rmsprop, epochs=30, not freezed backbone, med shuffle av train dataset, over"
-# python -v
-echo 'batch: 4, learning rate, 0.01, dropout: 0.3'
-python train_movinet.py -b 4 -l 0.01 -d 0 -v 'a0' -s 1 -e 2
+python train_movinet.py -b 4 -l 0.001 -sd 0.1 -uf 45 -d 0.1 -v 'a4' -s 1 -e 60 -r 172
 
 echo "Finished running train_movinet.py"
 

@@ -10,15 +10,6 @@
 #SBATCH --gres=gpu:1
 #SBATCH --constraint="gpu32g"
 
-
-
-
-
-
-#SBATCH --mail-type=end
-#SBATCH --mail-type=fail
-#SBATCH --mail-user=helenaml@stud.ntnu.no
-
 #mem: total memory per node
 #mem-per-cpu: memory per cpu-core
 

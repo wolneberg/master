@@ -7,7 +7,6 @@ from torch.utils.data.dataloader import default_collate
 import torch.optim as optim
 
 def train_one_epoch(model, trainloader, optimizer, criterion, device):
-    # det er også en metode innebygd for dette I think...
     # https://github.com/pytorch/vision/blob/main/references/video_classification/train.py 
     model = model.to(device)
     model.train()
@@ -37,7 +36,7 @@ def train_one_epoch(model, trainloader, optimizer, criterion, device):
         optimizer.step()
     # Loss and accuracy for the complete epoch.
     epoch_loss = train_running_loss / counter
-    epoch_acc = (train_running_correct / bs_accumuator) #regner den ut accuracy i prosent though?
+    epoch_acc = (train_running_correct / bs_accumuator)
     return epoch_loss, epoch_acc
 
 def validate(model, testloader, criterion, device):
@@ -79,11 +78,6 @@ def plot_results(train_loss, valid_loss, train_acc, valid_acc, name):
     ax1.plot(train_loss, label = 'train')
     ax1.plot(valid_loss, label = 'test')
     ax1.set_ylabel('Loss')
-
-    # Determine upper bound of y-axis
-    # max_loss = max(train_loss + history.history['val_loss'])
-
-    # ax1.set_ylim([0, np.ceil(max_loss)])
     ax1.set_xlabel('Epoch')
     ax1.legend(['Train', 'Validation']) 
 
@@ -98,7 +92,7 @@ def plot_results(train_loss, valid_loss, train_acc, valid_acc, name):
 
     plt.savefig(f'Models/x3d/results/{name}.png')
 
-def train(device, model, num_epochs, train_loader, valid_loader, name, model_name):
+def train(device, model, num_epochs, train_loader, valid_loader, resolution, frames, name, model_name):
     model = model.to(device)
     optimizer = optim.RMSprop(model.parameters(), lr=0.01)
     criterion = nn.CrossEntropyLoss()
@@ -122,7 +116,9 @@ def train(device, model, num_epochs, train_loader, valid_loader, name, model_nam
         print(f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
 
     plot_results(train_loss, valid_loss, train_acc, valid_acc, name)
-    input = torch.randn(1, 3, 20, 256, 256)
+
+    #Save model
+    input = torch.randn(1, 3, frames, resolution, resolution)
     model.cuda()
     input = input.cuda()
     model.eval()

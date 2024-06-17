@@ -28,7 +28,6 @@ def collate_fn(batch):
 
 
 def train_one_epoch(model, trainloader, optimizer, criterion, device):
-    # det er også en metode innebygd for dette I think...
     # https://github.com/pytorch/vision/blob/main/references/video_classification/train.py 
     model = model.to(device)
     model.train()
@@ -58,7 +57,7 @@ def train_one_epoch(model, trainloader, optimizer, criterion, device):
         optimizer.step()
     # Loss and accuracy for the complete epoch.
     epoch_loss = train_running_loss / counter
-    epoch_acc = (train_running_correct / bs_accumuator) #regner den ut accuracy i prosent though?
+    epoch_acc = (train_running_correct / bs_accumuator)
     return epoch_loss, epoch_acc
 
 def validate(model, testloader, criterion, device):
@@ -101,11 +100,6 @@ def plot_results(train_loss, valid_loss, train_acc, valid_acc, name):
     ax1.plot(train_loss, label = 'train')
     ax1.plot(valid_loss, label = 'test')
     ax1.set_ylabel('Loss')
-
-    # Determine upper bound of y-axis
-    # max_loss = max(train_loss + history.history['val_loss'])
-
-    # ax1.set_ylim([0, np.ceil(max_loss)])
     ax1.set_xlabel('Epoch')
     ax1.legend(['Train', 'Validation']) 
 
@@ -149,3 +143,8 @@ def train(num_epochs, num_classes, train_loader, valid_loader, device, fine_tune
         print(f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
     
     plot_results(train_loss, valid_loss, train_acc, valid_acc, name)
+
+    #Save model
+    torch_input = torch.randn(epoch, 3, 172, 172)
+    onnx_program = torch.onnx.dynamo_export(model, torch_input)
+    onnx_program.save(f"s3d-{name}.onnx")
