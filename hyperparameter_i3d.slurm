@@ -1,14 +1,14 @@
 #!/bin/sh
 #SBATCH --partition=GPUQ
 #SBATCH --account=share-ie-idi
-#SBATCH --time=05:30:00
+#SBATCH --time=25:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=100G            
 #SBATCH --job-name="SLR"
 #SBATCH --output=Models/i3d/Output/%x.out
 #SBATCH --gres=gpu:1
-#SBATCH --constraint="gpu32g"
+#SBATCH --constraint="gpu80g"
 
 #mem: total memory per node
 #mem-per-cpu: memory per cpu-core
@@ -24,24 +24,31 @@ echo "Total of $SLURM_NTASKS cores"
 
 nvidia-smi
 
+module purge
+module list
 module load Python/3.10.4-GCCcore-11.3.0
 
-python -m venv venv/Test9
+
+# python -m venv venv/Test9
 source venv/Test9/bin/activate
 
-
 module load cuDNN/8.8.0.121-CUDA-12.0.0
+
 
 pip install -q -r requirements.txt
 pip install -q tf-models-official==2.14
 pip install -q --upgrade tensorflow==2.14
 pip install -q --upgrade tensorflow.text==2.14
+pip install -q keras-tuner
 pip install -q git+https://github.com/tensorflow/docs
-pip install tf2onnx
-pip install -q keras
+
 module list
 
-python train_i3d.py -e 2 -r 224 -b 2 -d 0.0 -l 0.001
+echo "movinet med gpu"
+# python -v
+python hyperparameter_i3d.py
 
+echo "Finished running train.py"
 
 deactivate
+# conda deactivate
