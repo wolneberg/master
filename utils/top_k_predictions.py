@@ -4,8 +4,6 @@ def calculate_accuracy(predictions, k=1):
     total_predictions = len(predictions)
     for actual, pred in predictions.items():
         x = actual.deref()
-        print(x)
-        print(pred)
         if x.numpy()[0] == pred.numpy()[0][0]:
             correct_predictions += 1
         

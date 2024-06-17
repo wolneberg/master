@@ -43,7 +43,7 @@ pip install -q git+https://github.com/tensorflow/docs
 # pip install git+https://github.com/okankop/vidaug
 module list
 
-python train_movinet.py -b 4 -l 0.001 -sd 0.1 -uf 45 -d 0.1 -v 'a4' -s 1 -e 60 -r 172
+python train_movinet.py -b 4 -l 0.001 -sd 0.1 -uf 45 -d 0.1 -v 'a4' -s 1 -e 2 -r 172
 
 echo "Finished running train_movinet.py"
 
