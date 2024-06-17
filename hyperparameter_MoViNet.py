@@ -153,8 +153,8 @@ def main(args):
     logits = model.predict(element, verbose=0)
     outputs = tf.nn.softmax(logits)
     top_predictions[label.ref()] = tf.argsort(outputs, axis=-1, direction='DESCENDING')
-  print(calculate_accuracy(top_predictions, k=5))
-
+  top_1, top_5 = calculate_accuracy(top_predictions, k=5)
+  print(f'Top 1 accuracy: {top_1} and Top 5 accuracy: {top_5}')
 
 
   saved_model_dir = f'Models/MoViNet/models/{model_id}'
