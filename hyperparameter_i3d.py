@@ -45,7 +45,8 @@ def main(args):
     unfreezLayers = hp.Int('freez_layers', min_value=0, max_value=len(model.layers), step=1)
     learning_rate = hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='LOG')
 
-
+    # I3D model implemented by Oana Ignat
+    # Uses weight from pre-trained on imagenet and kinetics datasetes
     model = Inception_Inflated3d(
                   include_top=False,
                   endpoint_logit=False, 
@@ -75,9 +76,9 @@ def main(args):
 
   print('Getting train videos...\n')
   train_videos = get_video_subset(f'nslt_{num_classes}', 'train')
-  print('\nGetting validation videos...\n')
+  print('Getting validation videos...\n')
   val_videos = get_video_subset(f'nslt_{num_classes}', 'val')
-  print('\nGetting test videos...\n')
+  print('Getting test videos...\n')
   test_videos = get_video_subset(f'nslt_{num_classes}', 'test')
   # print('\nGetting missing videos...\n')
   # missing = get_missing_videos()
@@ -89,20 +90,21 @@ def main(args):
   test_set = get_frame_set(test_videos, glosses, frames, resolution, frame_step)
 
 
-  print('formatting train...')
+  print('Formatting train... \n')
   train_dataset = format_dataset(train_set, glosses, over=False)
-  print('formatting val...')
+  print('Formatting val... \n')
   val_dataset = format_dataset(val_set, glosses, over=False)
-  print('formatting test...')
+  print('Formatting test... \n')
   test_dataset = format_dataset(test_set, glosses, over=False)
 
-  print('batching...')
+  print('Batching... \n')
   with tf.device("CPU"):
     train_dataset = train_dataset.batch(batch_size)
     val_dataset = val_dataset.batch(batch_size)
     test_dataset = test_dataset.batch(1)
 
-  print('Training...\n')
+  print('Hyperparameter tuning...\n')
+  # Distributed search
   # strategy = tf.distribute.MirroredStrategy()
   # print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 
@@ -139,17 +141,21 @@ def main(args):
   print(f"Best Hyperparameters: {best_hps.values}")
 
   model = tuner.hypermodel.build(best_hps)
-
+  print('Training with the best hyperparameters...\n')
   result = train(model, train_ds=train_dataset, val_ds=val_dataset, epochs=epochs, name=name)
   plot_history(result, name, 'i3d','2')
+
+  print("Evaluating... \n")
   top_predictions = {}
   for element, label in test_dataset:
     logits = model.predict(element, verbose=0)
     outputs = tf.nn.softmax(logits)
     top_predictions[label.ref()] = tf.argsort(outputs, axis=-1, direction='DESCENDING')
-  print(calculate_accuracy(top_predictions, k=5))
+  top_1, top_5 = calculate_accuracy(top_predictions, k=5)
+  print(f'Top 1 accuracy: {top_1} and Top 5 accuracy: {top_5}')
   model.evaluate(test_dataset, verbose=2)
 
+  print("Saving model... \n")
   saved_model_dir = f'Models/i3d/models'
   os.path.dirname(f'{saved_model_dir}')
   
