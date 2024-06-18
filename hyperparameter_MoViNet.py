@@ -37,9 +37,11 @@ def main(args):
 
   def build_model(hp):  
     backend.clear_session()
+
     use_positional_encoding = model_id in {'a3', 'a4', 'a5'}
     stochastic_depth_drop_rate = hp.Float('stochastic_depth_drop_rate', min_value=0.0, max_value=1.0, step=0.1)
     dropout_rate = hp.Float('dropout_rate', min_value=0.0, max_value=0.5, step=0.1)
+    
     backbone = movinet.Movinet(
       model_id=model_id, 
       causal=True,
@@ -52,13 +54,14 @@ def main(args):
       use_external_states=False,
     )
     print(len(backbone.layers))
+
     unfreezLayers = hp.Int('freez_layers', min_value=0, max_value=len(backbone.layers), step=1)
     backbone.trainable = True
     for layer in backbone.layers[:-unfreezLayers]:
         layer.trainable = False
     model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=600, output_states=True)
 
-    # Load pre-trained weights
+    # Load pre-trained weights on kinetics dataset
     checkpoint_dir = f'Models/MoViNet/Backbone/movinet_{model_id}_stream'
     checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
     checkpoint = tf.train.Checkpoint(model=model)
@@ -74,20 +77,20 @@ def main(args):
     initial_learning_rate = hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='LOG')
     # learning_rate = tf.keras.optimizers.schedules.CosineDecay(initial_learning_rate, decay_steps=total_train_steps)
     optimizer  = tf.keras.optimizers.RMSprop(initial_learning_rate, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0)
-    optimizer = tf.keras.optimizers.Adam(learning_rate = initial_learning_rate)
+    # optimizer = tf.keras.optimizers.Adam(learning_rate = initial_learning_rate)
     model.compile(loss=loss_obj, optimizer=optimizer, metrics=['accuracy'])
     return model
 
   print('Getting train videos...\n')
   train_videos = get_video_subset(f'nslt_{num_classes}', 'train')
-  print('\nGetting validation videos...\n')
+  print('Getting validation videos...\n')
   val_videos = get_video_subset(f'nslt_{num_classes}', 'val')
-  print('\nGetting test videos...\n')
+  print('Getting test videos...\n')
   test_videos = get_video_subset(f'nslt_{num_classes}', 'test')
   # test_videos = ["00635","01386","01397","05639","05735","07093","09945","11305","11311","12320","21933","22954","24960","26984",
   #                "31750","32246","33286","34685","34743","34836","36927","42953","45432","49173","51077","55375","57273","57943",
   #                "57944","63769","64209","64297","65506","68132","68446","68636","69225","69370","70237","07092"]
-  print('\nGetting missing videos...\n')
+  print('Getting missing videos...\n')
   # missing = get_missing_videos()
   print('Getting glosses...\n')
   glosses = get_glosses()
@@ -97,7 +100,7 @@ def main(args):
   test_set = get_frame_set(test_videos, glosses, frames, resolution, frame_step)
   # glosses = get_less_glosses(train_set)
 
-  print('formatting datasets...')
+  print('Formatting datasets...')
   train_dataset = format_dataset(train_set, glosses, over=False)
   val_dataset = format_dataset(val_set, glosses, over=False)
   test_dataset = format_dataset(test_set, glosses, over=False)
@@ -109,7 +112,8 @@ def main(args):
 
   del train_videos, train_set, val_videos, val_set, glosses
 
-  print('Training...\n')
+  print('Hyperparameter tuning...\n')
+  # Distributed searching
   # strategy = tf.distribute.MirroredStrategy()
   # print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
   # with strategy.scope():
@@ -143,11 +147,14 @@ def main(args):
   for hps in best_hps:
     print(f"Hyperparameters: {hps.values}")
 
+  print('Training with the best hyperparameters...\n')
   best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
   model = tuner.hypermodel.build(best_hps)
   result = train(model, train_ds=train_dataset, val_ds=val_dataset, epochs=epochs, name=name, model_id=model_id)
   plot_history(result, name, 'MoViNet', f'{model_id}_stream')
 
+  print("Evaluate... \n")
+  model.evaluate(test_dataset, verbose=2)
   top_predictions = {}
   for element, label in test_dataset:
     logits = model.predict(element, verbose=0)
@@ -156,7 +163,7 @@ def main(args):
   top_1, top_5 = calculate_accuracy(top_predictions, k=5)
   print(f'Top 1 accuracy: {top_1} and Top 5 accuracy: {top_5}')
 
-
+  print("Saving model... \n")
   saved_model_dir = f'Models/MoViNet/models/{model_id}'
   os.path.dirname(saved_model_dir)
   
@@ -169,6 +176,8 @@ def main(args):
     export_path=f'{saved_model_dir}/{name}',
     causal=True,
     bundle_input_init_states_fn=False)
+  
+  print("Converitng to TensorFlow Lite... \n")
   converter = tf.lite.TFLiteConverter.from_saved_model(f'{saved_model_dir}/{name}')
   tflite_model = converter.convert()
   os.path.dirname(f'{saved_model_dir}/lite/')

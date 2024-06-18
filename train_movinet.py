@@ -60,9 +60,9 @@ def main(args):
 
   print('Getting train videos...\n')
   train_videos = get_video_subset(f'nslt_{num_classes}', 'train')
-  print('\nGetting validation videos...\n')
+  print('Getting validation videos...\n')
   val_videos = get_video_subset(f'nslt_{num_classes}', 'val')
-  print('\nGetting test videos...\n')
+  print('Getting test videos...\n')
   test_videos = get_video_subset(f'nslt_{num_classes}', 'test')
   # print('\nGetting missing videos...\n')
   # missing = get_missing_videos()
@@ -73,22 +73,23 @@ def main(args):
   val_set = get_frame_set(val_videos, glosses, frames, resolution, frame_step)
   test_set = get_frame_set(test_videos, glosses, frames, resolution, frame_step)
 
-  print('formatting train...')
+  print('Formatting train...')
   train_dataset = format_dataset(train_set, glosses, over=False)
-  print('formatting val...')
+  print('Formatting val...')
   val_dataset = format_dataset(val_set, glosses, over=False)
-  print('formatting test...')
+  print('Formatting test...')
   test_dataset = format_dataset(test_set, glosses, over=False)
 
 
+  """Function to create gif from the frames extracted (verify that the input are correct)"""
   def to_gif(images, label):
     converted_images = np.clip(images * 255, 0, 255).astype(np.uint8)
-    imageio.mimsave(f'./{label}_3.gif', converted_images, fps=20)
-    return embed.embed_file(f'./{label}_3.gif')
+    imageio.mimsave(f'./{label}.gif', converted_images, fps=20)
+    return embed.embed_file(f'gifs/{label}.gif')
+  # video = 100 # the index of the video to create gif
+  # to_gif(train_set.iloc[video]['frames'], train_set.iloc[video]['gloss'])
 
-  # to_gif(train_set.iloc[100]['frames'], train_set.iloc[100]['gloss'])
-
-  print('batching...')
+  print('Batching... \n')
   with tf.device("CPU"):
     train_dataset = train_dataset.batch(batch_size)
     val_dataset = val_dataset.batch(batch_size)
@@ -102,7 +103,7 @@ def main(args):
   print('||||||||||||||||||||||||||||||||||||||||||||||')
   plot_history(result, name, 'MoViNet', model_id)
 
-  print('Evaluate')
+  print('Evaluate... \n')
   model.evaluate(test_dataset, verbose=2)
   
   top_predictions = {}
@@ -114,10 +115,10 @@ def main(args):
   print(f'Top 1 accuracy: {top_1} and Top 5 accuracy: {top_5}')
 
   if args.stream == 1:
-    print('make inference model')
+    print('Make inference model... \n')
     model = build_model_inference(model_id, frames, resolution, name)
 
-  print('Save model')
+  print('Saving model... \n')
   saved_model_dir = f'Models/MoViNet/models/{model_id}'
   os.path.dirname(saved_model_dir)
   
@@ -132,9 +133,9 @@ def main(args):
     causal=args.stream == 1,
     bundle_input_init_states_fn=False)
   
-  print('Convert to TFLite')
+  print('Convert to TensorFlow Lite... \n')
   converter = tf.lite.TFLiteConverter.from_saved_model(f'{saved_model_dir}/{name}')
-  if args.stream==0:
+  if args.stream==0: # This is needed for the base model as they contain 3D operations
       converter.target_spec.supported_ops = [
         tf.lite.OpsSet.TFLITE_BUILTINS,
         tf.lite.OpsSet.SELECT_TF_OPS

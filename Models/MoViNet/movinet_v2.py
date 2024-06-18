@@ -4,10 +4,8 @@ import tensorflow as tf
 from official.projects.movinet.modeling import movinet
 from official.projects.movinet.modeling import movinet_model
 
-
+"""Build MoViNet model with pretrained weights on Kinetics dataset"""
 def build_classifier(model_id, batch_size, num_frames, resolution, num_classes, unFreezLayers, dropout_rate, stochastic_depth_drop_rate=0):
-  """Builds a classifier on top of a backbone model."""
-  # tf.keras.backend.clear_session()
   model = None
   use_positional_encoding = model_id[:2] in {'a3', 'a4', 'a5'}
 
@@ -15,10 +13,7 @@ def build_classifier(model_id, batch_size, num_frames, resolution, num_classes, 
     backbone = movinet.Movinet(
         model_id=model_id[:2],
         causal=False,
-        # conv_type='2plus1d',
-        # se_type='2plus3d', 
         stochastic_depth_drop_rate = stochastic_depth_drop_rate,
-        # use_external_states=False,
   )
   else:
     backbone = movinet.Movinet(
@@ -37,44 +32,20 @@ def build_classifier(model_id, batch_size, num_frames, resolution, num_classes, 
   for layer in backbone.layers[:-unFreezLayers]:
       layer.trainable = False
 
-
-  # Set num_classes=600 to load the pre-trained weights from the original model
+  # Set num_classes=600 to load the pre-trained weights on kinetics from the original model
   model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=600, output_states=model_id[2:] == '_stream')
-  # inputs = tf.ones([1, 13, resolution, resolution, 3])
-  # model.build(inputs)
-  # model.build([None, None, None, None, 3])
-
-  # Load pre-trained weights
+  # Load pre-trained weights on Kinetics dataset
   checkpoint_dir = f'Models/MoViNet/Backbone/movinet_{model_id}'
   checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
   checkpoint = tf.train.Checkpoint(model=model)
   status = checkpoint.restore(checkpoint_path)
   status.assert_existing_objects_matched()
 
-
   model = movinet_model.MovinetClassifier(backbone=backbone, num_classes=num_classes, dropout_rate=dropout_rate)
-
-
-  # # print(x)
-  # output = tf.keras.layers.Dense(units=num_classes, activation=activation)(model.layers[-1].output)
-  # model = tf.keras.Model(inputs=model.inputs, outputs=output)
-  # model = tf.keras.Sequential([
-  #    model,
-  #    tf.keras.layers.Dense(num_classes)
-  # ])
   model.build([batch_size, num_frames, resolution, resolution, 3])
-  # del output, backbone
-  # del checkpoint, checkpoint_dir, checkpoint_path, status
-  # if freeze_backbone:
-  # for layer in model.layers[:-1]:
-  #     print(layer.trainable)
-  #     print('trainable layer True')
-  #     layer.trainable = True
-    # model.layers[-1].trainable = True
   return model
 
-# with strategy.scope():
-
+"""Build MoViNet model for inference for the stream version"""
 def build_model_inference(model_id, num_frames, resolution, name):
     
   use_positional_encoding = model_id[:2] in {'a3', 'a4', 'a5'}
@@ -87,7 +58,7 @@ def build_model_inference(model_id, num_frames, resolution, name):
     activation='hard_swish',
     gating_activation='hard_sigmoid',
     use_positional_encoding=use_positional_encoding,
-    use_external_states=True,
+    use_external_states=True, #This need to be True for inference mode, but False for training mode
   )
 
   model = movinet_model.MovinetClassifier(
@@ -97,17 +68,14 @@ def build_model_inference(model_id, num_frames, resolution, name):
   inputs = tf.ones([1, num_frames, resolution, resolution, 3])
   model.build(inputs)
 
-  print('load checkpoint')
+  print('Load checkpoint from the training')
   checkpoint_path = f"Models/MoViNet/checkpoints/hyperparameter/{model_id}/{name}/cp.ckpt"
-  # print(tf.train.latest_checkpoint(checkpoint_path))
   model.load_weights(checkpoint_path).expect_partial()
-  print('finish checkpoint')
-
   return model
 
+"""Compile MoViNet with loss and optimizers"""
 def compile(model, len_train, batch_size, epochs, optimizer, learning_rate=0.01, rho=0.9, momentum=0.9, epsilon=1.0, clipnorm=1.0):
   loss_obj = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-
 
   if optimizer == 'adam':
     optimizer = tf.keras.optimizers.Adam(learning_rate = learning_rate)
@@ -122,11 +90,10 @@ def compile(model, len_train, batch_size, epochs, optimizer, learning_rate=0.01,
   model.compile(loss=loss_obj, optimizer=optimizer, metrics=['accuracy'])
   del loss_obj, optimizer, learning_rate  
 
+"""Train MoViNet model"""
 def train(model, train_ds, val_ds, epochs, name, model_id):
   print("Training a movinet model...")
-  # print(model.summary())
   print(tf.config.list_physical_devices('GPU'))
-  # print(tf.config.list_physical_devices())
   checkpoint_path = f"Models/MoViNet/checkpoints/hyperparameter/{model_id}/{name}/cp.ckpt"
   checkpoint_dir = os.path.dirname(checkpoint_path)
 

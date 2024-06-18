@@ -45,9 +45,9 @@ def main(args):
 
   print('Getting train videos...\n')
   train_videos = get_video_subset(f'nslt_{num_classes}', 'train')
-  print('\nGetting validation videos...\n')
+  print('Getting validation videos...\n')
   val_videos = get_video_subset(f'nslt_{num_classes}', 'val')
-  print('\nGetting test videos...\n')
+  print('Getting test videos...\n')
   test_videos = get_video_subset(f'nslt_{num_classes}', 'test')
   # print('\nGetting missing videos...\n')
   # missing = get_missing_videos()
@@ -58,22 +58,22 @@ def main(args):
   val_set = get_frame_set(val_videos, glosses, frames, resolution, frame_step)
   test_set = get_frame_set(test_videos, glosses, frames, resolution, frame_step)
 
-  print('formatting train...')
+  print('Formatting train...')
   train_dataset = format_dataset(train_set, glosses, over=False)
-  print('formatting val...')
+  print('Formatting val...')
   val_dataset = format_dataset(val_set, glosses, over=False)
-  print('formatting test...')
+  print('Formatting test...')
   test_dataset = format_dataset(test_set, glosses, over=False)
 
-
+  """Function to create gif from the frames extracted (verify that the input are correct)"""
   def to_gif(images, label):
     converted_images = np.clip(images * 255, 0, 255).astype(np.uint8)
-    imageio.mimsave(f'./{label}_3.gif', converted_images, fps=20)
-    return embed.embed_file(f'./{label}_3.gif')
+    imageio.mimsave(f'./{label}.gif', converted_images, fps=20)
+    return embed.embed_file(f'gifs/{label}.gif')
+  # video = 100 # the index of the video to create gif
+  # to_gif(train_set.iloc[video]['frames'], train_set.iloc[video]['gloss'])
 
-  # to_gif(train_set.iloc[200]['frames'], train_set.iloc[200]['gloss'])
-
-  print('batching...')
+  print('Batching... \n')
   with tf.device("CPU"):
     train_dataset = train_dataset.batch(batch_size)
     val_dataset = val_dataset.batch(batch_size)
@@ -87,14 +87,18 @@ def main(args):
   print('||||||||||||||||||||||||||||||||||||||||||||||')
   print(f"Valdation loss: {min(result.history['val_loss'])} validation accuracy {max(result.history['val_accuracy'])}")
   plot_history(result, name, 'i3d','2')
+
+  print("Evaluating... \n")
   top_predictions = {}
   for element, label in test_dataset:
     logits = model.predict(element, verbose=0)
     outputs = tf.nn.softmax(logits)
     top_predictions[label.ref()] = tf.argsort(outputs, axis=-1, direction='DESCENDING')
-  print(calculate_accuracy(top_predictions, k=5))
+  top_1, top_5 = calculate_accuracy(top_predictions, k=5)
+  print(f'Top 1 accuracy: {top_1} and Top 5 accuracy: {top_5}')
   model.evaluate(test_dataset, verbose=2)
 
+  print("Saving model... \n")
   saved_model_dir = f'Models/{modelname}/models'
   os.path.dirname(f'{saved_model_dir}')
   
