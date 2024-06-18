@@ -28,7 +28,6 @@ Resolution $172^2$ was used for MoViNets, and $224^2$ was used for I3D. All mode
 | Model | Top 1 | Top 2 | Loss |
 |----------|----------|----------| -----------|
 | I3D | 48.45 | 76.35  | 2.2436 |
-|
 | MoViNet-a0 | 53.49 | 82.17 | 2.5375 |
 | MoViNet-a1 | 59.30 | 85.66 | 2.4041 |
 | MoViNet-a2 | 61.63 | 87.21 | 1.9817 |
